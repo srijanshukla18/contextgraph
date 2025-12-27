@@ -246,6 +246,45 @@ make setup        # Create DB + install deps
 make server       # Start on :8080
 ```
 
+## Production Ready
+
+ContextGraph is built for production workloads:
+
+| Feature | Implementation |
+|---------|----------------|
+| **Authentication** | API key via `X-API-Key` header or `Bearer` token |
+| **Rate Limiting** | Sliding window (configurable via `RATE_LIMIT_REQUESTS`) |
+| **Connection Pooling** | `psycopg2.pool.ThreadedConnectionPool` (2-20 connections) |
+| **Structured Logging** | JSON logs with request IDs for distributed tracing |
+| **Health Checks** | `/health` (with DB status) and `/ready` (k8s probe) |
+| **Security** | Non-root container, configurable CORS, no hardcoded secrets |
+| **Test Coverage** | 86 tests across server + all SDK integrations |
+
+### Configuration
+
+```bash
+# Copy the template
+cp .env.example .env
+
+# Required
+POSTGRES_PASSWORD=your-secure-password
+API_KEYS=key1,key2                    # Comma-separated API keys
+
+# Optional (with defaults)
+ALLOWED_ORIGINS=http://localhost:3000 # CORS origins
+RATE_LIMIT_REQUESTS=100               # Requests per window
+RATE_LIMIT_WINDOW=60                  # Window in seconds
+REQUIRE_AUTH=true                     # Set to 'false' for dev
+LOG_LEVEL=INFO                        # DEBUG, INFO, WARNING, ERROR
+```
+
+### Generate API Keys
+
+```bash
+# Generate a secure API key
+openssl rand -hex 32
+```
+
 ## Project Structure
 
 ```
@@ -282,6 +321,8 @@ contextgraph/
 - [x] Claude Agent SDK integration
 - [x] LangGraph integration
 - [x] Explain API
+- [x] Production hardening (auth, rate limits, pooling, logging)
+- [x] Comprehensive test suite (86 tests)
 - [ ] Explorer UI
 - [ ] Precedent search (embeddings)
 - [ ] Time-travel queries

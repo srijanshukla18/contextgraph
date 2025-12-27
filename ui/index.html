@@ -4,301 +4,325 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ContextGraph Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
     :root {
-      --bg-dark: #030712;
-      --bg-card: rgba(17, 24, 39, 0.8);
-      --bg-card-hover: rgba(31, 41, 55, 0.9);
-      --border: rgba(75, 85, 99, 0.4);
-      --border-glow: rgba(99, 102, 241, 0.5);
-      --text: #f9fafb;
-      --text-dim: #9ca3af;
-      --text-muted: #6b7280;
-      --blue: #6366f1;
-      --blue-glow: rgba(99, 102, 241, 0.4);
-      --green: #10b981;
-      --green-glow: rgba(16, 185, 129, 0.4);
-      --yellow: #f59e0b;
-      --yellow-glow: rgba(245, 158, 11, 0.4);
-      --red: #ef4444;
-      --purple: #a855f7;
-      --purple-glow: rgba(168, 85, 247, 0.4);
-      --cyan: #06b6d4;
-      --cyan-glow: rgba(6, 182, 212, 0.4);
+      --bg-void: #05080f;
+      --bg-surface: #0a1018;
+      --bg-elevated: #111820;
+      --bg-card: rgba(17, 24, 32, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-default: rgba(255, 255, 255, 0.1);
+      --border-active: rgba(255, 255, 255, 0.2);
+      --text-primary: #f0f4f8;
+      --text-secondary: #8899a8;
+      --text-muted: #5a6a78;
+      --accent-cyan: #22d3ee;
+      --accent-cyan-dim: rgba(34, 211, 238, 0.15);
+      --accent-amber: #fbbf24;
+      --accent-amber-dim: rgba(251, 191, 36, 0.15);
+      --accent-violet: #a78bfa;
+      --accent-violet-dim: rgba(167, 139, 250, 0.15);
+      --accent-emerald: #34d399;
+      --accent-emerald-dim: rgba(52, 211, 153, 0.15);
+      --accent-rose: #fb7185;
+      --accent-rose-dim: rgba(251, 113, 133, 0.15);
+      --font-display: 'Space Grotesk', system-ui, sans-serif;
+      --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg-dark);
-      color: var(--text);
+      font-family: var(--font-display);
+      background: var(--bg-void);
+      color: var(--text-primary);
       min-height: 100vh;
-      overflow-x: hidden;
+      line-height: 1.5;
     }
 
-    /* Animated background */
-    .bg-gradient {
+    .atmosphere {
       position: fixed;
       inset: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent),
-        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168, 85, 247, 0.1), transparent),
-        radial-gradient(ellipse 50% 30% at 10% 80%, rgba(6, 182, 212, 0.08), transparent);
       pointer-events: none;
       z-index: 0;
+      background:
+        radial-gradient(ellipse 100% 60% at 0% 0%, rgba(34, 211, 238, 0.08), transparent 50%),
+        radial-gradient(ellipse 80% 50% at 100% 100%, rgba(167, 139, 250, 0.06), transparent 50%);
     }
 
-    .container {
+    .app {
       position: relative;
       z-index: 1;
-      max-width: 1600px;
-      margin: 0 auto;
-      padding: 2rem;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
     }
 
-    /* Header */
-    header {
+    @media (max-width: 1024px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+
+    .header {
+      grid-column: 1 / -1;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 2rem;
+      padding: 1rem 1.5rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
     }
 
-    .logo-icon {
-      width: 48px;
-      height: 48px;
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      border-radius: 12px;
+    .logo-mark {
+      width: 40px;
+      height: 40px;
+      position: relative;
+    }
+
+    .logo-mark::before, .logo-mark::after {
+      content: '';
+      position: absolute;
+      border: 2px solid var(--accent-cyan);
+      border-radius: 50%;
+    }
+
+    .logo-mark::before {
+      inset: 0;
+      animation: pulse-ring 3s ease-out infinite;
+    }
+
+    .logo-mark::after {
+      inset: 8px;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 20px var(--accent-cyan);
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .logo-text {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-text span { color: var(--accent-cyan); }
+
+    .header-controls {
       display: flex;
       align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 30px var(--blue-glow);
+      gap: 0.75rem;
+      flex-wrap: wrap;
     }
 
-    .logo-icon svg { width: 28px; height: 28px; }
-
-    .logo h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .input-field {
+      padding: 0.5rem 0.875rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      width: 220px;
     }
 
-    .header-actions { display: flex; gap: 0.75rem; }
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px var(--accent-cyan-dim);
+    }
 
     .btn {
-      padding: 0.625rem 1.25rem;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 0.8125rem;
       font-weight: 500;
-      font-family: inherit;
-      transition: all 0.2s;
-      backdrop-filter: blur(10px);
+      cursor: pointer;
+      transition: all 0.15s;
     }
 
     .btn:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--border-glow);
-      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+      background: var(--bg-card);
+      border-color: var(--border-active);
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--blue), var(--purple));
-      border: none;
+      background: linear-gradient(135deg, var(--accent-cyan), #0891b2);
+      border-color: transparent;
+      color: var(--bg-void);
+      font-weight: 600;
     }
 
     .btn-primary:hover {
-      box-shadow: 0 0 30px var(--blue-glow);
       transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(34, 211, 238, 0.3);
     }
 
-    .api-input {
-      padding: 0.625rem 1rem;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--text);
-      font-size: 0.875rem;
-      font-family: 'JetBrains Mono', monospace;
-      width: 200px;
-      backdrop-filter: blur(10px);
-      transition: all 0.2s;
-    }
-
-    .api-input:focus {
-      outline: none;
-      border-color: var(--blue);
-      box-shadow: 0 0 20px var(--blue-glow);
-    }
-
-    /* Decision List Sidebar */
-    .decision-list {
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      margin-bottom: 2rem;
+    .sidebar {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
       overflow: hidden;
-      display: none;
-    }
-
-    .decision-list.active { display: block; }
-
-    .decision-list-header {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
     }
 
-    .decision-list-header h3 {
-      font-size: 0.9rem;
+    .sidebar-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 0.6875rem;
       font-weight: 600;
-      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
     }
 
-    .decision-list-items {
-      max-height: 300px;
+    .decision-count {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      background: var(--accent-cyan-dim);
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .decision-list {
+      flex: 1;
       overflow-y: auto;
+      padding: 0.5rem;
     }
 
-    .decision-list-item {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border);
+    .decision-item {
+      padding: 0.875rem 1rem;
+      border-radius: 8px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
+      margin-bottom: 0.25rem;
+      border: 1px solid transparent;
+    }
+
+    .decision-item:hover { background: var(--bg-elevated); }
+
+    .decision-item.active {
+      background: var(--accent-cyan-dim);
+      border-color: rgba(34, 211, 238, 0.3);
+    }
+
+    .decision-item-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-    }
-
-    .decision-list-item:last-child { border-bottom: none; }
-
-    .decision-list-item:hover {
-      background: rgba(99, 102, 241, 0.1);
-    }
-
-    .decision-list-item.selected {
-      background: rgba(99, 102, 241, 0.15);
-      border-left: 3px solid var(--blue);
+      justify-content: space-between;
+      margin-bottom: 0.375rem;
     }
 
     .decision-item-id {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      color: var(--text);
-    }
-
-    .decision-item-time {
+      font-family: var(--font-mono);
       font-size: 0.75rem;
-      color: var(--text-muted);
+      color: var(--text-primary);
     }
 
     .decision-item-outcome {
-      font-size: 0.7rem;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
+      font-size: 0.625rem;
       font-weight: 600;
       text-transform: uppercase;
+      padding: 0.125rem 0.375rem;
+      border-radius: 3px;
     }
 
-    .decision-item-outcome.committed {
-      background: rgba(16, 185, 129, 0.2);
-      color: var(--green);
-    }
+    .outcome-committed { background: var(--accent-emerald-dim); color: var(--accent-emerald); }
+    .outcome-denied { background: var(--accent-rose-dim); color: var(--accent-rose); }
 
-    .decision-item-outcome.denied {
-      background: rgba(239, 68, 68, 0.2);
-      color: var(--red);
-    }
-
-    .loading-spinner {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
+    .decision-item-time {
+      font-size: 0.6875rem;
       color: var(--text-muted);
     }
 
-    .error-message {
-      padding: 1rem;
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 8px;
-      color: var(--red);
-      font-size: 0.85rem;
-      margin: 1rem;
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: var(--text-muted);
     }
 
-    /* Decision Header Card */
-    .decision-card {
+    .main {
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .detail-header {
       background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 1.75rem;
-      margin-bottom: 2rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
       position: relative;
       overflow: hidden;
     }
 
-    .decision-card::before {
+    .detail-header::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--blue), var(--purple), transparent);
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-violet), var(--accent-emerald));
     }
 
-    .decision-header {
+    .detail-header-top {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
       gap: 2rem;
+      margin-bottom: 1.25rem;
       flex-wrap: wrap;
     }
 
-    .decision-meta {
+    .detail-meta {
       display: flex;
-      gap: 3rem;
+      gap: 2.5rem;
       flex-wrap: wrap;
     }
 
-    .meta-item {
+    .meta-group {
       display: flex;
       flex-direction: column;
-      gap: 0.375rem;
+      gap: 0.25rem;
     }
 
     .meta-label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
+      font-size: 0.625rem;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      font-weight: 500;
+      color: var(--text-muted);
     }
 
     .meta-value {
-      font-size: 0.9rem;
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      color: var(--text-primary);
     }
 
     .outcome-badge {
@@ -306,374 +330,251 @@
       align-items: center;
       gap: 0.5rem;
       padding: 0.5rem 1rem;
-      border-radius: 30px;
-      font-size: 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
 
-    .outcome-committed {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
-      color: var(--green);
-      box-shadow: 0 0 20px var(--green-glow), inset 0 0 20px rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.3);
+    .outcome-badge.committed {
+      background: var(--accent-emerald-dim);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(52, 211, 153, 0.3);
     }
 
-    .outcome-denied {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05));
-      color: var(--red);
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-      border: 1px solid rgba(239, 68, 68, 0.3);
+    .outcome-badge.denied {
+      background: var(--accent-rose-dim);
+      color: var(--accent-rose);
+      border: 1px solid rgba(251, 113, 133, 0.3);
     }
 
-    .summary-bar {
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .summary-step {
+    .flow-summary {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: rgba(255,255,255,0.03);
-      border-radius: 8px;
-      font-size: 0.8rem;
-      color: var(--text-dim);
+      flex-wrap: wrap;
     }
 
-    .summary-step .num {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--blue);
-      color: white;
+    .flow-step {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      font-weight: 600;
-    }
-
-    .summary-arrow {
-      color: var(--text-muted);
-      font-size: 1.25rem;
-    }
-
-    /* Flow Graph */
-    .flow-graph {
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      position: relative;
-    }
-
-    .graph-container {
-      position: relative;
-      width: 100%;
-      min-height: 450px;
-    }
-
-    .graph-svg {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
-    }
-
-    .flow-path {
-      fill: none;
-      stroke: url(#flowGradient);
-      stroke-width: 2;
-      stroke-linecap: round;
-      opacity: 0.6;
-    }
-
-    .flow-path-glow {
-      fill: none;
-      stroke: url(#flowGradient);
-      stroke-width: 6;
-      stroke-linecap: round;
-      opacity: 0.15;
-      filter: blur(3px);
-    }
-
-    .flow-particle {
-      fill: var(--cyan);
-      filter: drop-shadow(0 0 6px var(--cyan));
-    }
-
-    /* Nodes */
-    .nodes-layer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-    }
-
-    .graph-column {
-      position: absolute;
-      top: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .column-label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    .node {
-      width: 180px;
-      background: linear-gradient(145deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.95));
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 0.875rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .node::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, transparent 40%, rgba(99, 102, 241, 0.1));
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .node:hover {
-      transform: translateY(-4px) scale(1.02);
-      border-color: var(--border-glow);
-      box-shadow:
-        0 20px 40px rgba(0,0,0,0.3),
-        0 0 40px var(--blue-glow);
-    }
-
-    .node:hover::before { opacity: 1; }
-
-    .node.active {
-      border-color: var(--cyan);
-      box-shadow: 0 0 40px var(--cyan-glow);
-    }
-
-    .node-glow {
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle, var(--blue-glow) 0%, transparent 70%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-    }
-
-    .node:hover .node-glow { opacity: 0.3; }
-
-    .node-header {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      margin-bottom: 0.5rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    .node-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.1rem;
-      flex-shrink: 0;
-    }
-
-    .node-icon.evidence {
-      background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(6, 182, 212, 0.1));
-      box-shadow: 0 0 20px var(--cyan-glow);
-    }
-
-    .node-icon.policy {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.1));
-      box-shadow: 0 0 20px var(--yellow-glow);
-    }
-
-    .node-icon.approval {
-      background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(168, 85, 247, 0.1));
-      box-shadow: 0 0 20px var(--purple-glow);
-    }
-
-    .node-icon.action {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.1));
-      box-shadow: 0 0 20px var(--green-glow);
-    }
-
-    .node-status {
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      border: 2px solid var(--bg-dark);
-    }
-
-    .status-pass { background: var(--green); box-shadow: 0 0 10px var(--green); }
-    .status-fail { background: var(--red); box-shadow: 0 0 10px var(--red); }
-    .status-warn { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
-
-    .node-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 0.25rem;
-      position: relative;
-      z-index: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .node-subtitle {
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      background: var(--bg-elevated);
+      border-radius: 6px;
       font-size: 0.75rem;
-      color: var(--text-muted);
-      position: relative;
-      z-index: 1;
+      color: var(--text-secondary);
     }
 
-    /* Details Panel */
-    .details-panel {
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      overflow: hidden;
-      display: none;
-      animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .details-panel.active { display: block; }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .details-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1.25rem 1.5rem;
-      background: rgba(255,255,255,0.02);
-      border-bottom: 1px solid var(--border);
-    }
-
-    .details-title {
+    .flow-step-count {
+      font-family: var(--font-mono);
       font-weight: 600;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
+      color: var(--text-primary);
     }
 
-    .details-close {
+    .flow-arrow { color: var(--text-muted); }
+
+    .flow-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      min-width: 800px;
+    }
+
+    @media (max-width: 1200px) {
+      .flow-grid { grid-template-columns: 1fr; min-width: auto; }
+    }
+
+    .flow-column { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .flow-column-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .flow-column-icon {
       width: 32px;
       height: 32px;
       border-radius: 8px;
-      background: rgba(255,255,255,0.05);
-      border: none;
-      color: var(--text-dim);
-      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: 1rem;
+    }
+
+    .flow-column-icon.evidence { background: var(--accent-cyan-dim); }
+    .flow-column-icon.policy { background: var(--accent-amber-dim); }
+    .flow-column-icon.approval { background: var(--accent-violet-dim); }
+    .flow-column-icon.action { background: var(--accent-emerald-dim); }
+
+    .flow-column-title {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .flow-node {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s var(--ease-out-expo);
+      position: relative;
+    }
+
+    .flow-node:hover {
+      border-color: var(--border-active);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .flow-node.active {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px var(--accent-cyan-dim);
+    }
+
+    .flow-node-status {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .flow-node-status.pass { background: var(--accent-emerald); box-shadow: 0 0 10px var(--accent-emerald); }
+    .flow-node-status.fail { background: var(--accent-rose); box-shadow: 0 0 10px var(--accent-rose); }
+    .flow-node-status.warn { background: var(--accent-amber); box-shadow: 0 0 10px var(--accent-amber); }
+
+    .flow-node-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+      padding-right: 1.5rem;
+    }
+
+    .flow-node-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+    }
+
+    .flow-node-empty {
+      background: transparent;
+      border-style: dashed;
+      cursor: default;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .flow-node-empty:hover { transform: none; box-shadow: none; }
+
+    .detail-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+      animation: slideUp 0.3s var(--ease-out-expo);
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .detail-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .detail-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .detail-panel-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
       font-size: 1.25rem;
-      transition: all 0.2s;
     }
 
-    .details-close:hover {
-      background: rgba(255,255,255,0.1);
-      color: var(--text);
-    }
+    .detail-panel-close:hover { background: var(--bg-card); color: var(--text-primary); }
 
-    .details-body { padding: 1.5rem; }
+    .detail-panel-body { padding: 1.25rem; }
 
-    .details-grid {
+    .detail-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 1rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
 
     .detail-card {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1rem;
+      background: var(--bg-elevated);
+      border-radius: 8px;
+      padding: 0.875rem;
     }
 
-    .detail-label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
+    .detail-card-label {
+      font-size: 0.625rem;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      margin-bottom: 0.5rem;
+      color: var(--text-muted);
+      margin-bottom: 0.375rem;
     }
 
-    .detail-value {
-      font-size: 0.9rem;
-      color: var(--text);
+    .detail-card-value {
+      font-size: 0.8125rem;
+      color: var(--text-primary);
       word-break: break-word;
     }
 
-    .json-block {
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--border);
-      border-radius: 12px;
+    .json-viewer {
+      background: var(--bg-void);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
       padding: 1rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      overflow: auto;
       white-space: pre-wrap;
-      color: var(--text-dim);
-      max-height: 250px;
-      overflow-y: auto;
+      max-height: 200px;
     }
 
-    .json-block::-webkit-scrollbar { width: 6px; height: 6px; }
-    .json-block::-webkit-scrollbar-track { background: transparent; }
-    .json-block::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    /* Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.8);
+      background: rgba(5, 8, 15, 0.9);
       backdrop-filter: blur(8px);
       display: none;
       align-items: center;
@@ -685,176 +586,195 @@
     .modal-overlay.active { display: flex; }
 
     .modal {
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 16px;
       width: 100%;
       max-width: 600px;
-      animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes modalIn {
-      from { opacity: 0; transform: scale(0.95) translateY(20px); }
-      to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
     .modal-header {
       padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
+    .modal-title { font-size: 1rem; font-weight: 600; }
+
     .modal-body { padding: 1.5rem; }
 
     .modal textarea {
       width: 100%;
-      height: 300px;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      color: var(--text);
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
+      height: 280px;
+      background: var(--bg-void);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
       padding: 1rem;
       resize: vertical;
-      transition: border-color 0.2s;
     }
 
     .modal textarea:focus {
       outline: none;
-      border-color: var(--blue);
-      box-shadow: 0 0 20px var(--blue-glow);
+      border-color: var(--accent-cyan);
     }
 
     .modal-footer {
       padding: 1rem 1.5rem;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border-subtle);
       display: flex;
       justify-content: flex-end;
       gap: 0.75rem;
     }
 
-    /* Responsive */
-    @media (max-width: 1200px) {
-      .graph-container { height: auto; min-height: 600px; }
-      .graph-column { position: relative !important; width: 100%; margin-bottom: 2rem; }
-      .graph-svg { display: none; }
-      .nodes-layer { position: relative; display: flex; flex-direction: column; gap: 2rem; }
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      color: var(--text-muted);
     }
+
+    .error-message {
+      padding: 1rem;
+      background: var(--accent-rose-dim);
+      border: 1px solid rgba(251, 113, 133, 0.3);
+      border-radius: 8px;
+      color: var(--accent-rose);
+      font-size: 0.8125rem;
+      margin: 1rem;
+    }
+
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      min-height: 60vh;
+    }
+
+    .welcome-icon { font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.6; }
+    .welcome-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .welcome-desc { color: var(--text-secondary); max-width: 400px; margin-bottom: 2rem; }
+    .welcome-actions { display: flex; gap: 0.75rem; }
+
+    .status-pass { color: var(--accent-emerald); }
+    .status-fail { color: var(--accent-rose); }
+    .status-warn { color: var(--accent-amber); }
   </style>
 </head>
 <body>
-  <div class="bg-gradient"></div>
+  <div class="atmosphere"></div>
 
-  <div class="container">
-    <header>
+  <div class="app">
+    <header class="header">
       <div class="logo">
-        <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-            <circle cx="12" cy="5" r="3"/>
-            <circle cx="5" cy="19" r="3"/>
-            <circle cx="19" cy="19" r="3"/>
-            <line x1="12" y1="8" x2="5" y2="16"/>
-            <line x1="12" y1="8" x2="19" y2="16"/>
-          </svg>
-        </div>
-        <h1>ContextGraph</h1>
+        <div class="logo-mark"></div>
+        <div class="logo-text">Context<span>Graph</span></div>
       </div>
-      <div class="header-actions">
-        <input type="text" id="api-url" class="api-input" value="http://localhost:8080" placeholder="API URL">
-        <button class="btn" onclick="fetchDecisions()">Fetch All</button>
-        <button class="btn" onclick="openModal()">Paste JSON</button>
-        <button class="btn btn-primary" onclick="loadSample()">Demo</button>
+      <div class="header-controls">
+        <input type="text" id="api-url" class="input-field" value="http://localhost:8080" placeholder="API URL">
+        <button class="btn" id="btn-fetch">Fetch</button>
+        <button class="btn" id="btn-paste">Paste JSON</button>
+        <button class="btn btn-primary" id="btn-demo">Demo</button>
       </div>
     </header>
 
-    <!-- Decision List -->
-    <div class="decision-list" id="decision-list">
-      <div class="decision-list-header">
-        <h3>Decisions</h3>
-        <button class="details-close" onclick="closeDecisionList()">×</button>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Decisions</span>
+        <span class="decision-count" id="decision-count">0</span>
       </div>
-      <div class="decision-list-items" id="decision-list-items"></div>
-    </div>
+      <div class="decision-list" id="decision-list"></div>
+    </aside>
 
-    <!-- Decision Card -->
-    <div class="decision-card">
-      <div class="decision-header">
-        <div class="decision-meta">
-          <div class="meta-item">
-            <span class="meta-label">Decision ID</span>
-            <span class="meta-value" id="meta-id">—</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Timestamp</span>
-            <span class="meta-value" id="meta-time">—</span>
-          </div>
-          <div class="meta-item">
-            <span class="meta-label">Agent</span>
-            <span class="meta-value" id="meta-agent">—</span>
-          </div>
+    <main class="main" id="main-content">
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">🔍</div>
+        <h2 class="welcome-title">Decision Explorer</h2>
+        <p class="welcome-desc">Visualize and analyze AI agent decisions. Load from your ContextGraph server or paste a DecisionRecord JSON.</p>
+        <div class="welcome-actions">
+          <button class="btn" id="btn-welcome-fetch">Connect to Server</button>
+          <button class="btn btn-primary" id="btn-welcome-demo">View Demo</button>
         </div>
-        <div class="outcome-badge" id="outcome-badge">—</div>
       </div>
-      <div class="summary-bar" id="summary-bar"></div>
-    </div>
-
-    <!-- Flow Graph -->
-    <div class="flow-graph">
-      <div class="graph-container" id="graph-container">
-        <svg class="graph-svg" id="graph-svg">
-          <defs>
-            <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#06b6d4"/>
-              <stop offset="50%" stop-color="#6366f1"/>
-              <stop offset="100%" stop-color="#10b981"/>
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="blur"/>
-              <feMerge>
-                <feMergeNode in="blur"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-          </defs>
-          <g id="connections"></g>
-          <g id="particles"></g>
-        </svg>
-        <div class="nodes-layer" id="nodes-layer"></div>
+      <div id="detail-view" style="display: none;">
+        <div class="detail-header">
+          <div class="detail-header-top">
+            <div class="detail-meta">
+              <div class="meta-group">
+                <span class="meta-label">Decision ID</span>
+                <span class="meta-value" id="meta-id">—</span>
+              </div>
+              <div class="meta-group">
+                <span class="meta-label">Timestamp</span>
+                <span class="meta-value" id="meta-time">—</span>
+              </div>
+              <div class="meta-group">
+                <span class="meta-label">Agent</span>
+                <span class="meta-value" id="meta-agent">—</span>
+              </div>
+            </div>
+            <div class="outcome-badge" id="outcome-badge">—</div>
+          </div>
+          <div class="flow-summary" id="flow-summary"></div>
+        </div>
+        <div class="flow-container">
+          <div class="flow-grid" id="flow-grid"></div>
+        </div>
+        <div id="detail-panel"></div>
       </div>
-    </div>
-
-    <!-- Details Panel -->
-    <div class="details-panel" id="details-panel">
-      <div class="details-header">
-        <span class="details-title" id="details-title">Details</span>
-        <button class="details-close" onclick="closeDetails()">×</button>
-      </div>
-      <div class="details-body" id="details-body"></div>
-    </div>
+    </main>
   </div>
 
-  <!-- Modal -->
-  <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-overlay" id="modal">
     <div class="modal">
       <div class="modal-header">
-        <span style="font-weight:600">Load DecisionRecord</span>
-        <button class="details-close" onclick="closeModal()">×</button>
+        <span class="modal-title">Load DecisionRecord</span>
+        <button class="detail-panel-close" id="modal-close">×</button>
       </div>
       <div class="modal-body">
-        <textarea id="json-input" placeholder="Paste DecisionRecord JSON..."></textarea>
+        <textarea id="json-input" placeholder="Paste DecisionRecord JSON here..."></textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="loadFromInput()">Visualize</button>
+        <button class="btn" id="modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-load">Visualize</button>
       </div>
     </div>
   </div>
 
   <script>
+    // Safe DOM utilities
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+    }
+
+    function createEl(tag, attrs, children) {
+      const el = document.createElement(tag);
+      if (attrs) {
+        Object.entries(attrs).forEach(([k, v]) => {
+          if (k === 'className') el.className = v;
+          else if (k === 'textContent') el.textContent = v;
+          else if (k.startsWith('data')) el.setAttribute(k.replace(/([A-Z])/g, '-$1').toLowerCase(), v);
+          else el.setAttribute(k, v);
+        });
+      }
+      if (children) {
+        (Array.isArray(children) ? children : [children]).forEach(c => {
+          if (typeof c === 'string') el.appendChild(document.createTextNode(c));
+          else if (c) el.appendChild(c);
+        });
+      }
+      return el;
+    }
+
     const sampleRecord = {
       decision_id: "3f35d5ee-adc5-4759-8376-290692970bf4",
       run_id: "run_SUP-4312_20251227",
@@ -872,7 +792,7 @@
       ],
       policies: [
         { policy_id: "service_credit", version: "1.0", result: "warn",
-          message: "Requested 20% exceeds 10% cap. Exception: 3 SEV-1 incidents + high churn risk" }
+          message: "Requested 20% exceeds 10% cap. Exception required." }
       ],
       approvals: [
         { approval_id: "apr_001", approver: { type: "human", id: "finance-lead@company.com", name: "Finance Lead" },
@@ -886,272 +806,190 @@
     };
 
     let currentRecord = null;
-    let animationFrame = null;
     let decisionsCache = [];
+    let selectedIndex = -1;
 
     function getApiUrl() { return document.getElementById('api-url').value.replace(/\/$/, ''); }
 
-    function loadSample() {
-      closeDecisionList();
-      renderRecord(sampleRecord);
+    function formatTime(ts) {
+      if (!ts) return '—';
+      try { return new Date(ts).toLocaleString(); } catch { return ts; }
     }
 
     function openModal() { document.getElementById('modal').classList.add('active'); }
     function closeModal() { document.getElementById('modal').classList.remove('active'); }
-    function closeDecisionList() { document.getElementById('decision-list').classList.remove('active'); }
 
     async function fetchDecisions() {
       const listEl = document.getElementById('decision-list');
-      const itemsEl = document.getElementById('decision-list-items');
-      listEl.classList.add('active');
-      itemsEl.innerHTML = '<div class="loading-spinner">Loading decisions...</div>';
+      listEl.textContent = '';
+      listEl.appendChild(createEl('div', { className: 'loading', textContent: 'Loading...' }));
 
       try {
-        const res = await fetch(`${getApiUrl()}/v1/decisions`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const res = await fetch(getApiUrl() + '/v1/decisions');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         decisionsCache = data.decisions || data || [];
-
-        if (decisionsCache.length === 0) {
-          itemsEl.innerHTML = '<div class="loading-spinner">No decisions found</div>';
-          return;
-        }
-
-        itemsEl.innerHTML = decisionsCache.map((d, i) => `
-          <div class="decision-list-item" onclick="selectDecision(${i})">
-            <div>
-              <div class="decision-item-id">${d.decision_id?.slice(0, 20) || 'Unknown'}...</div>
-              <div class="decision-item-time">${new Date(d.timestamp).toLocaleString()}</div>
-            </div>
-            <span class="decision-item-outcome ${d.outcome}">${d.outcome || '?'}</span>
-          </div>
-        `).join('');
+        renderDecisionList(decisionsCache);
       } catch (e) {
-        itemsEl.innerHTML = `<div class="error-message">Failed to fetch: ${e.message}<br><br>Make sure the server is running at ${getApiUrl()}</div>`;
+        listEl.textContent = '';
+        listEl.appendChild(createEl('div', { className: 'error-message', textContent: 'Failed: ' + e.message }));
       }
     }
 
+    function renderDecisionList(decisions) {
+      decisionsCache = decisions;
+      document.getElementById('decision-count').textContent = decisions.length;
+      const listEl = document.getElementById('decision-list');
+      listEl.textContent = '';
+
+      if (!decisions.length) {
+        listEl.appendChild(createEl('div', { className: 'empty-state', textContent: 'No decisions found' }));
+        return;
+      }
+
+      decisions.forEach((d, i) => {
+        const item = createEl('div', { className: 'decision-item' + (i === selectedIndex ? ' active' : '') });
+        item.dataset.index = i;
+
+        const header = createEl('div', { className: 'decision-item-header' });
+        header.appendChild(createEl('span', { className: 'decision-item-id', textContent: (d.decision_id || '').slice(0, 12) + '...' }));
+        header.appendChild(createEl('span', { className: 'decision-item-outcome outcome-' + d.outcome, textContent: d.outcome || '?' }));
+        item.appendChild(header);
+
+        item.appendChild(createEl('div', { className: 'decision-item-time', textContent: formatTime(d.timestamp) }));
+        item.addEventListener('click', () => selectDecision(i));
+        listEl.appendChild(item);
+      });
+    }
+
     async function selectDecision(index) {
+      selectedIndex = index;
       const decision = decisionsCache[index];
       if (!decision) return;
 
-      // Mark selected
-      document.querySelectorAll('.decision-list-item').forEach((el, i) => {
-        el.classList.toggle('selected', i === index);
+      document.querySelectorAll('.decision-item').forEach((el, i) => {
+        el.classList.toggle('active', i === index);
       });
 
-      // Fetch full record
-      try {
-        const res = await fetch(`${getApiUrl()}/v1/decisions/${decision.decision_id}`);
-        if (res.ok) {
-          const full = await res.json();
-          // Transform DB format to UI format
-          const record = {
-            decision_id: full.decision_id,
-            run_id: full.run_id,
-            timestamp: full.timestamp,
-            outcome: full.outcome,
-            outcome_reason: full.outcome_reason,
-            actor: full.actor_id ? { type: full.actor_type, id: full.actor_id } : null,
-            evidence: full.evidence || [],
-            policies: full.policies || [],
-            approvals: full.approvals || [],
-            actions: full.actions || [],
-          };
-          renderRecord(record);
-          return;
-        }
-      } catch (e) {
-        console.log('Fetch failed, using cached:', e);
+      if (decision.decision_id && !decision.evidence) {
+        try {
+          const res = await fetch(getApiUrl() + '/v1/decisions/' + decision.decision_id);
+          if (res.ok) {
+            const full = await res.json();
+            renderRecord({
+              decision_id: full.decision_id,
+              run_id: full.run_id,
+              timestamp: full.timestamp,
+              outcome: full.outcome,
+              outcome_reason: full.outcome_reason,
+              actor: full.actor_id ? { type: full.actor_type, id: full.actor_id } : null,
+              evidence: full.evidence || [],
+              policies: full.policies || [],
+              approvals: full.approvals || [],
+              actions: full.actions || [],
+            });
+            return;
+          }
+        } catch (e) { console.log('Fetch failed:', e); }
       }
-
-      // Fallback to cached data
       renderRecord(decision);
     }
 
     function loadFromInput() {
       try {
         const data = JSON.parse(document.getElementById('json-input').value);
-        renderRecord(data.record || data);
+        const record = data.record || data;
+        renderDecisionList([record]);
+        selectDecision(0);
         closeModal();
       } catch(e) { alert('Invalid JSON: ' + e.message); }
     }
 
+    function loadSample() {
+      renderDecisionList([sampleRecord]);
+      selectDecision(0);
+    }
+
     function renderRecord(record) {
       currentRecord = record;
+      document.getElementById('welcome').style.display = 'none';
+      document.getElementById('detail-view').style.display = 'block';
+      document.getElementById('detail-panel').textContent = '';
 
-      // Header
-      document.getElementById('meta-id').textContent = record.decision_id?.slice(0, 18) + '...' || '—';
-      document.getElementById('meta-time').textContent = new Date(record.timestamp).toLocaleString();
+      document.getElementById('meta-id').textContent = (record.decision_id || '').slice(0, 20) + '...';
+      document.getElementById('meta-time').textContent = formatTime(record.timestamp);
       document.getElementById('meta-agent').textContent = record.actor?.name || record.actor?.id || '—';
 
       const badge = document.getElementById('outcome-badge');
       badge.textContent = (record.outcome || 'unknown').toUpperCase();
-      badge.className = 'outcome-badge outcome-' + record.outcome;
+      badge.className = 'outcome-badge ' + record.outcome;
 
-      // Summary bar
-      const summaryBar = document.getElementById('summary-bar');
-      const steps = [];
-      if (record.evidence?.length) steps.push({ n: record.evidence.length, t: 'Evidence' });
-      if (record.policies?.length) steps.push({ n: record.policies.length, t: 'Policy' });
-      if (record.approvals?.length) steps.push({ n: record.approvals.length, t: 'Approval' });
-      if (record.actions?.length) steps.push({ n: record.actions.length, t: 'Action' });
-
-      summaryBar.innerHTML = steps.map((s, i) =>
-        `${i > 0 ? '<span class="summary-arrow">→</span>' : ''}<div class="summary-step"><span class="num">${s.n}</span>${s.t}</div>`
-      ).join('');
-
-      renderGraph(record);
-      closeDetails();
+      renderFlowSummary(record);
+      renderFlowGrid(record);
     }
 
-    function renderGraph(record) {
-      const container = document.getElementById('nodes-layer');
-      const graphContainer = document.getElementById('graph-container');
-      const svg = document.getElementById('graph-svg');
-      const connG = document.getElementById('connections');
-      const particlesG = document.getElementById('particles');
+    function renderFlowSummary(record) {
+      const el = document.getElementById('flow-summary');
+      el.textContent = '';
 
-      connG.innerHTML = '';
-      particlesG.innerHTML = '';
+      const steps = [
+        { n: (record.evidence || []).length, t: 'Evidence', icon: '📊' },
+        { n: (record.policies || []).length, t: 'Policy', icon: '📋' },
+        { n: (record.approvals || []).length, t: 'Approval', icon: '👤' },
+        { n: (record.actions || []).length, t: 'Action', icon: '⚡' }
+      ].filter(s => s.n > 0);
+
+      steps.forEach((s, i) => {
+        if (i > 0) el.appendChild(createEl('span', { className: 'flow-arrow', textContent: '→' }));
+        const step = createEl('div', { className: 'flow-step' });
+        step.appendChild(createEl('span', { textContent: s.icon }));
+        step.appendChild(createEl('span', { className: 'flow-step-count', textContent: s.n }));
+        step.appendChild(createEl('span', { textContent: s.t }));
+        el.appendChild(step);
+      });
+    }
+
+    function renderFlowGrid(record) {
+      const gridEl = document.getElementById('flow-grid');
+      gridEl.textContent = '';
 
       const columns = [
-        { id: 'evidence', label: 'EVIDENCE', items: record.evidence || [], icon: '📊', type: 'evidence' },
-        { id: 'policy', label: 'POLICY', items: record.policies || [], icon: '📋', type: 'policy' },
-        { id: 'approval', label: 'APPROVAL', items: record.approvals || [], icon: '👤', type: 'approval' },
-        { id: 'action', label: 'ACTION', items: record.actions || [], icon: '⚡', type: 'action' }
+        { id: 'evidence', label: 'Evidence', icon: '📊', items: record.evidence || [] },
+        { id: 'policy', label: 'Policy', icon: '📋', items: record.policies || [] },
+        { id: 'approval', label: 'Approval', icon: '👤', items: record.approvals || [] },
+        { id: 'action', label: 'Action', icon: '⚡', items: record.actions || [] }
       ];
 
-      // Calculate dynamic height based on max items
-      const maxItems = Math.max(...columns.map(c => c.items.length || 1));
-      const nodeHeight = 95; // Approximate height of each node + gap
-      const headerHeight = 50;
-      const dynamicHeight = Math.max(350, headerHeight + maxItems * nodeHeight);
-      graphContainer.style.height = dynamicHeight + 'px';
+      columns.forEach(col => {
+        const colEl = createEl('div', { className: 'flow-column' });
 
-      const containerRect = graphContainer.getBoundingClientRect();
-      const colWidth = containerRect.width / 4;
+        const headerEl = createEl('div', { className: 'flow-column-header' });
+        headerEl.appendChild(createEl('div', { className: 'flow-column-icon ' + col.id, textContent: col.icon }));
+        headerEl.appendChild(createEl('span', { className: 'flow-column-title', textContent: col.label }));
+        colEl.appendChild(headerEl);
 
-      container.innerHTML = columns.map((col, ci) => {
-        const left = ci * colWidth + (colWidth - 180) / 2;
+        if (col.items.length) {
+          col.items.forEach((item, i) => {
+            const node = createEl('div', { className: 'flow-node' });
+            node.dataset.type = col.id;
+            node.dataset.index = i;
 
-        const nodes = col.items.length ? col.items.map((item, i) => {
-          const status = getStatus(item, col.type);
-          return `
-            <div class="node" onclick="showDetails('${col.type}', ${i})" data-col="${ci}" data-row="${i}">
-              <div class="node-glow"></div>
-              ${status ? `<span class="node-status status-${status}"></span>` : ''}
-              <div class="node-header">
-                <div class="node-icon ${col.type}">${col.icon}</div>
-              </div>
-              <div class="node-title">${getTitle(item, col.type)}</div>
-              <div class="node-subtitle">${getSubtitle(item, col.type)}</div>
-            </div>
-          `;
-        }).join('') : `
-          <div class="node" style="opacity:0.5;cursor:default">
-            <div class="node-header"><div class="node-icon ${col.type}">${col.icon}</div></div>
-            <div class="node-title">No ${col.label.toLowerCase()}</div>
-          </div>
-        `;
+            const status = getStatus(item, col.id);
+            if (status) {
+              node.appendChild(createEl('div', { className: 'flow-node-status ' + status }));
+            }
 
-        return `
-          <div class="graph-column" style="left:${left}px">
-            <div class="column-label">${col.label}</div>
-            ${nodes}
-          </div>
-        `;
-      }).join('');
-
-      // Draw connections after DOM update
-      requestAnimationFrame(() => drawConnections(columns));
-    }
-
-    function drawConnections(columns) {
-      const svg = document.getElementById('graph-svg');
-      const connG = document.getElementById('connections');
-      const particlesG = document.getElementById('particles');
-      const svgRect = svg.getBoundingClientRect();
-
-      const nodePositions = [];
-      document.querySelectorAll('.node[data-col]').forEach(node => {
-        const rect = node.getBoundingClientRect();
-        const col = parseInt(node.dataset.col);
-        const row = parseInt(node.dataset.row);
-        if (!nodePositions[col]) nodePositions[col] = [];
-        nodePositions[col][row] = {
-          x: rect.left - svgRect.left + rect.width / 2,
-          y: rect.top - svgRect.top + rect.height / 2,
-          right: rect.left - svgRect.left + rect.width,
-          left: rect.left - svgRect.left
-        };
-      });
-
-      // Draw bezier curves between columns
-      for (let c = 0; c < nodePositions.length - 1; c++) {
-        const from = nodePositions[c];
-        const to = nodePositions[c + 1];
-        if (!from?.length || !to?.length) continue;
-
-        from.forEach((f, fi) => {
-          to.forEach((t, ti) => {
-            const x1 = f.right + 10;
-            const y1 = f.y;
-            const x2 = t.left - 10;
-            const y2 = t.y;
-            const cx1 = x1 + (x2 - x1) * 0.4;
-            const cx2 = x1 + (x2 - x1) * 0.6;
-
-            const pathD = `M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}`;
-
-            // Glow path
-            const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            glowPath.setAttribute('d', pathD);
-            glowPath.setAttribute('class', 'flow-path-glow');
-            connG.appendChild(glowPath);
-
-            // Main path
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', pathD);
-            path.setAttribute('class', 'flow-path');
-            path.id = `path-${c}-${fi}-${ti}`;
-            connG.appendChild(path);
-
-            // Particle
-            const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            particle.setAttribute('r', '4');
-            particle.setAttribute('class', 'flow-particle');
-            particle.dataset.path = path.id;
-            particle.dataset.offset = Math.random();
-            particlesG.appendChild(particle);
+            node.appendChild(createEl('div', { className: 'flow-node-title', textContent: getTitle(item, col.id) }));
+            node.appendChild(createEl('div', { className: 'flow-node-subtitle', textContent: getSubtitle(item, col.id) }));
+            node.addEventListener('click', () => showDetails(col.id, i));
+            colEl.appendChild(node);
           });
-        });
-      }
+        } else {
+          colEl.appendChild(createEl('div', { className: 'flow-node flow-node-empty', textContent: 'No ' + col.label.toLowerCase() }));
+        }
 
-      animateParticles();
-    }
-
-    function animateParticles() {
-      if (animationFrame) cancelAnimationFrame(animationFrame);
-
-      const particles = document.querySelectorAll('.flow-particle');
-      let time = 0;
-
-      function animate() {
-        time += 0.003;
-        particles.forEach(p => {
-          const path = document.getElementById(p.dataset.path);
-          if (!path) return;
-          const len = path.getTotalLength();
-          const offset = parseFloat(p.dataset.offset);
-          const pos = ((time + offset) % 1) * len;
-          const point = path.getPointAtLength(pos);
-          p.setAttribute('cx', point.x);
-          p.setAttribute('cy', point.y);
-        });
-        animationFrame = requestAnimationFrame(animate);
-      }
-      animate();
+        gridEl.appendChild(colEl);
+      });
     }
 
     function getStatus(item, type) {
@@ -1163,91 +1001,100 @@
 
     function getTitle(item, type) {
       if (type === 'evidence') return item.source || item.tool_name || 'Evidence';
-      if (type === 'policy') return `${item.policy_id} v${item.version}`;
+      if (type === 'policy') return item.policy_id + ' v' + item.version;
       if (type === 'approval') return item.granted ? 'Approved' : 'Denied';
       if (type === 'action') return item.tool;
       return '—';
     }
 
     function getSubtitle(item, type) {
-      if (type === 'evidence') return new Date(item.retrieved_at).toLocaleTimeString();
-      if (type === 'policy') return item.result?.toUpperCase();
+      if (type === 'evidence') return formatTime(item.retrieved_at);
+      if (type === 'policy') return (item.result || '').toUpperCase();
       if (type === 'approval') return item.approver?.id || item.approver?.name || '';
       if (type === 'action') return item.success ? 'Success' : 'Failed';
       return '';
     }
 
     function showDetails(type, index) {
-      const panel = document.getElementById('details-panel');
-      const title = document.getElementById('details-title');
-      const body = document.getElementById('details-body');
-
-      const items = { evidence: currentRecord.evidence, policy: currentRecord.policies,
-                      approval: currentRecord.approvals, action: currentRecord.actions };
+      const items = { evidence: currentRecord.evidence, policy: currentRecord.policies, approval: currentRecord.approvals, action: currentRecord.actions };
       const item = items[type]?.[index];
       if (!item) return;
 
+      document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active'));
+      document.querySelector('.flow-node[data-type="' + type + '"][data-index="' + index + '"]')?.classList.add('active');
+
       const icons = { evidence: '📊', policy: '📋', approval: '👤', action: '⚡' };
-      title.innerHTML = `${icons[type]} ${getTitle(item, type)}`;
+      const panelEl = document.getElementById('detail-panel');
+      panelEl.textContent = '';
 
-      body.innerHTML = renderDetails(item, type);
-      panel.classList.add('active');
+      const panel = createEl('div', { className: 'detail-panel' });
 
-      document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
-      document.querySelector(`.node[data-col="${['evidence','policy','approval','action'].indexOf(type)}"][data-row="${index}"]`)?.classList.add('active');
-    }
+      const header = createEl('div', { className: 'detail-panel-header' });
+      const title = createEl('span', { className: 'detail-panel-title' });
+      title.appendChild(createEl('span', { textContent: icons[type] }));
+      title.appendChild(createEl('span', { textContent: ' ' + getTitle(item, type) }));
+      header.appendChild(title);
+      const closeBtn = createEl('button', { className: 'detail-panel-close', textContent: '×' });
+      closeBtn.addEventListener('click', closeDetails);
+      header.appendChild(closeBtn);
+      panel.appendChild(header);
 
-    function closeDetails() {
-      document.getElementById('details-panel').classList.remove('active');
-      document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
-    }
-
-    function renderDetails(item, type) {
-      let grid = '', json = '';
+      const body = createEl('div', { className: 'detail-panel-body' });
+      const grid = createEl('div', { className: 'detail-grid' });
+      let json = {};
 
       if (type === 'evidence') {
-        grid = `
-          <div class="detail-card"><div class="detail-label">Source</div><div class="detail-value">${item.source}</div></div>
-          <div class="detail-card"><div class="detail-label">Retrieved</div><div class="detail-value">${new Date(item.retrieved_at).toLocaleString()}</div></div>
-          <div class="detail-card"><div class="detail-label">ID</div><div class="detail-value">${item.evidence_id || '—'}</div></div>
-        `;
-        json = item.snapshot;
+        grid.appendChild(createDetailCard('Source', item.source));
+        grid.appendChild(createDetailCard('Retrieved', formatTime(item.retrieved_at)));
+        grid.appendChild(createDetailCard('ID', item.evidence_id || '—'));
+        json = item.snapshot || {};
       } else if (type === 'policy') {
-        const color = item.result === 'pass' ? 'var(--green)' : item.result === 'fail' ? 'var(--red)' : 'var(--yellow)';
-        grid = `
-          <div class="detail-card"><div class="detail-label">Policy</div><div class="detail-value">${item.policy_id}</div></div>
-          <div class="detail-card"><div class="detail-label">Version</div><div class="detail-value">${item.version}</div></div>
-          <div class="detail-card"><div class="detail-label">Result</div><div class="detail-value" style="color:${color};font-weight:600">${item.result?.toUpperCase()}</div></div>
-        `;
+        grid.appendChild(createDetailCard('Policy', item.policy_id));
+        grid.appendChild(createDetailCard('Version', item.version));
+        grid.appendChild(createDetailCard('Result', (item.result || '').toUpperCase(), 'status-' + (item.result === 'pass' ? 'pass' : item.result === 'fail' ? 'fail' : 'warn')));
         json = { message: item.message };
       } else if (type === 'approval') {
-        const color = item.granted ? 'var(--green)' : 'var(--red)';
-        grid = `
-          <div class="detail-card"><div class="detail-label">Approver</div><div class="detail-value">${item.approver?.id || item.approver?.name}</div></div>
-          <div class="detail-card"><div class="detail-label">Decision</div><div class="detail-value" style="color:${color};font-weight:600">${item.granted ? 'APPROVED' : 'DENIED'}</div></div>
-          <div class="detail-card"><div class="detail-label">Time</div><div class="detail-value">${new Date(item.granted_at).toLocaleString()}</div></div>
-        `;
+        grid.appendChild(createDetailCard('Approver', item.approver?.name || item.approver?.id));
+        grid.appendChild(createDetailCard('Decision', item.granted ? 'APPROVED' : 'DENIED', item.granted ? 'status-pass' : 'status-fail'));
+        grid.appendChild(createDetailCard('Time', formatTime(item.granted_at)));
         json = { reason: item.reason };
       } else if (type === 'action') {
-        const color = item.success ? 'var(--green)' : 'var(--red)';
-        grid = `
-          <div class="detail-card"><div class="detail-label">Tool</div><div class="detail-value">${item.tool}</div></div>
-          <div class="detail-card"><div class="detail-label">Status</div><div class="detail-value" style="color:${color};font-weight:600">${item.success ? 'SUCCESS' : 'FAILED'}</div></div>
-          <div class="detail-card"><div class="detail-label">Time</div><div class="detail-value">${new Date(item.committed_at).toLocaleString()}</div></div>
-        `;
+        grid.appendChild(createDetailCard('Tool', item.tool));
+        grid.appendChild(createDetailCard('Status', item.success ? 'SUCCESS' : 'FAILED', item.success ? 'status-pass' : 'status-fail'));
+        grid.appendChild(createDetailCard('Time', formatTime(item.committed_at)));
         json = { params: item.params, result: item.result };
       }
 
-      return `
-        <div class="details-grid">${grid}</div>
-        <div class="detail-label" style="margin-bottom:0.5rem">Data</div>
-        <div class="json-block">${JSON.stringify(json, null, 2)}</div>
-      `;
+      body.appendChild(grid);
+      body.appendChild(createEl('div', { className: 'detail-card-label', textContent: 'Data' }));
+      body.appendChild(createEl('div', { className: 'json-viewer', textContent: JSON.stringify(json, null, 2) }));
+      panel.appendChild(body);
+      panelEl.appendChild(panel);
     }
 
-    // Init
-    loadSample();
-    window.addEventListener('resize', () => currentRecord && renderGraph(currentRecord));
+    function createDetailCard(label, value, valueClass) {
+      const card = createEl('div', { className: 'detail-card' });
+      card.appendChild(createEl('div', { className: 'detail-card-label', textContent: label }));
+      const valEl = createEl('div', { className: 'detail-card-value' + (valueClass ? ' ' + valueClass : ''), textContent: value || '—' });
+      card.appendChild(valEl);
+      return card;
+    }
+
+    function closeDetails() {
+      document.getElementById('detail-panel').textContent = '';
+      document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active'));
+    }
+
+    // Event listeners
+    document.getElementById('btn-fetch').addEventListener('click', fetchDecisions);
+    document.getElementById('btn-paste').addEventListener('click', openModal);
+    document.getElementById('btn-demo').addEventListener('click', loadSample);
+    document.getElementById('btn-welcome-fetch').addEventListener('click', fetchDecisions);
+    document.getElementById('btn-welcome-demo').addEventListener('click', loadSample);
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
+    document.getElementById('modal-load').addEventListener('click', loadFromInput);
+    document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
   </script>
 </body>
 </html>
