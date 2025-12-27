@@ -10,10 +10,10 @@ ContextGraph captures *why* your AI agents and workflows made decisions—not ju
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │   Evidence          Policy           Approval        Action     │
-│   ┌──────┐         ┌──────┐         ┌──────┐       ┌──────┐    │
-│   │ CRM  │────────▶│ Cap  │────────▶│ HITL │──────▶│Commit│    │
-│   │ Data │         │ 10%  │         │      │       │      │    │
-│   └──────┘         └──────┘         └──────┘       └──────┘    │
+│   ┌──────┐         ┌──────┐         ┌──────┐       ┌──────┐     │
+│   │ CRM  │────────▶│ Cap  │────────▶│ HITL │──────▶│Commit│     │
+│   │ Data │         │ 10%  │         │      │       │      │     │
+│   └──────┘         └──────┘         └──────┘       └──────┘     │
 │   ┌──────┐              │                              │        │
 │   │Ticket│              ▼                              ▼        │
 │   └──────┘         Exception              Service Credit        │
