@@ -1,0 +1,19 @@
+[project]
+name = "contextgraph-workspace"
+version = "0.1.0"
+description = "Decision traces as data. Context as a graph."
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "httpx>=0.24",
+]
+
+[tool.uv.sources]
+contextgraph = { path = "sdk/python" }
+
+[tool.uv.workspace]
+members = ["sdk/python"]

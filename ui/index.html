@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ContextGraph Explorer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg-dark: #030712;
+      --bg-card: rgba(17, 24, 39, 0.8);
+      --bg-card-hover: rgba(31, 41, 55, 0.9);
+      --border: rgba(75, 85, 99, 0.4);
+      --border-glow: rgba(99, 102, 241, 0.5);
+      --text: #f9fafb;
+      --text-dim: #9ca3af;
+      --text-muted: #6b7280;
+      --blue: #6366f1;
+      --blue-glow: rgba(99, 102, 241, 0.4);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.4);
+      --yellow: #f59e0b;
+      --yellow-glow: rgba(245, 158, 11, 0.4);
+      --red: #ef4444;
+      --purple: #a855f7;
+      --purple-glow: rgba(168, 85, 247, 0.4);
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168, 85, 247, 0.1), transparent),
+        radial-gradient(ellipse 50% 30% at 10% 80%, rgba(6, 182, 212, 0.08), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 30px var(--blue-glow);
+    }
+
+    .logo-icon svg { width: 28px; height: 28px; }
+
+    .logo h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions { display: flex; gap: 0.75rem; }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      font-family: inherit;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+    }
+
+    .btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-glow);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border: none;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 30px var(--blue-glow);
+      transform: translateY(-1px);
+    }
+
+    .api-input {
+      padding: 0.625rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 0.875rem;
+      font-family: 'JetBrains Mono', monospace;
+      width: 200px;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+    }
+
+    .api-input:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 20px var(--blue-glow);
+    }
+
+    /* Decision List Sidebar */
+    .decision-list {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      margin-bottom: 2rem;
+      overflow: hidden;
+      display: none;
+    }
+
+    .decision-list.active { display: block; }
+
+    .decision-list-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .decision-list-header h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .decision-list-items {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .decision-list-item {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .decision-list-item:last-child { border-bottom: none; }
+
+    .decision-list-item:hover {
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .decision-list-item.selected {
+      background: rgba(99, 102, 241, 0.15);
+      border-left: 3px solid var(--blue);
+    }
+
+    .decision-item-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+
+    .decision-item-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .decision-item-outcome {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .decision-item-outcome.committed {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--green);
+    }
+
+    .decision-item-outcome.denied {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--red);
+    }
+
+    .loading-spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+
+    .error-message {
+      padding: 1rem;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      color: var(--red);
+      font-size: 0.85rem;
+      margin: 1rem;
+    }
+
+    /* Decision Header Card */
+    .decision-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .decision-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--blue), var(--purple), transparent);
+    }
+
+    .decision-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .decision-meta {
+      display: flex;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .meta-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+
+    .meta-value {
+      font-size: 0.9rem;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .outcome-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .outcome-committed {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+      color: var(--green);
+      box-shadow: 0 0 20px var(--green-glow), inset 0 0 20px rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .outcome-denied {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05));
+      color: var(--red);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .summary-bar {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .summary-step {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .summary-step .num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .summary-arrow {
+      color: var(--text-muted);
+      font-size: 1.25rem;
+    }
+
+    /* Flow Graph */
+    .flow-graph {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .graph-container {
+      position: relative;
+      width: 100%;
+      min-height: 450px;
+    }
+
+    .graph-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .flow-path {
+      fill: none;
+      stroke: url(#flowGradient);
+      stroke-width: 2;
+      stroke-linecap: round;
+      opacity: 0.6;
+    }
+
+    .flow-path-glow {
+      fill: none;
+      stroke: url(#flowGradient);
+      stroke-width: 6;
+      stroke-linecap: round;
+      opacity: 0.15;
+      filter: blur(3px);
+    }
+
+    .flow-particle {
+      fill: var(--cyan);
+      filter: drop-shadow(0 0 6px var(--cyan));
+    }
+
+    /* Nodes */
+    .nodes-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+    }
+
+    .graph-column {
+      position: absolute;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .column-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .node {
+      width: 180px;
+      background: linear-gradient(145deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.95));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.875rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .node::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 40%, rgba(99, 102, 241, 0.1));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .node:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: var(--border-glow);
+      box-shadow:
+        0 20px 40px rgba(0,0,0,0.3),
+        0 0 40px var(--blue-glow);
+    }
+
+    .node:hover::before { opacity: 1; }
+
+    .node.active {
+      border-color: var(--cyan);
+      box-shadow: 0 0 40px var(--cyan-glow);
+    }
+
+    .node-glow {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, var(--blue-glow) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .node:hover .node-glow { opacity: 0.3; }
+
+    .node-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .node-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .node-icon.evidence {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(6, 182, 212, 0.1));
+      box-shadow: 0 0 20px var(--cyan-glow);
+    }
+
+    .node-icon.policy {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.1));
+      box-shadow: 0 0 20px var(--yellow-glow);
+    }
+
+    .node-icon.approval {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(168, 85, 247, 0.1));
+      box-shadow: 0 0 20px var(--purple-glow);
+    }
+
+    .node-icon.action {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.1));
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+
+    .node-status {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-dark);
+    }
+
+    .status-pass { background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .status-fail { background: var(--red); box-shadow: 0 0 10px var(--red); }
+    .status-warn { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+
+    .node-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+      position: relative;
+      z-index: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .node-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Details Panel */
+    .details-panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      display: none;
+      animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .details-panel.active { display: block; }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .details-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .details-title {
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .details-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      transition: all 0.2s;
+    }
+
+    .details-close:hover {
+      background: rgba(255,255,255,0.1);
+      color: var(--text);
+    }
+
+    .details-body { padding: 1.5rem; }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .detail-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .detail-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .detail-value {
+      font-size: 0.9rem;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    .json-block {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      color: var(--text-dim);
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .json-block::-webkit-scrollbar { width: 6px; height: 6px; }
+    .json-block::-webkit-scrollbar-track { background: transparent; }
+    .json-block::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 600px;
+      animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body { padding: 1.5rem; }
+
+    .modal textarea {
+      width: 100%;
+      height: 300px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      padding: 1rem;
+      resize: vertical;
+      transition: border-color 0.2s;
+    }
+
+    .modal textarea:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 20px var(--blue-glow);
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .graph-container { height: auto; min-height: 600px; }
+      .graph-column { position: relative !important; width: 100%; margin-bottom: 2rem; }
+      .graph-svg { display: none; }
+      .nodes-layer { position: relative; display: flex; flex-direction: column; gap: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="12" cy="5" r="3"/>
+            <circle cx="5" cy="19" r="3"/>
+            <circle cx="19" cy="19" r="3"/>
+            <line x1="12" y1="8" x2="5" y2="16"/>
+            <line x1="12" y1="8" x2="19" y2="16"/>
+          </svg>
+        </div>
+        <h1>ContextGraph</h1>
+      </div>
+      <div class="header-actions">
+        <input type="text" id="api-url" class="api-input" value="http://localhost:8080" placeholder="API URL">
+        <button class="btn" onclick="fetchDecisions()">Fetch All</button>
+        <button class="btn" onclick="openModal()">Paste JSON</button>
+        <button class="btn btn-primary" onclick="loadSample()">Demo</button>
+      </div>
+    </header>
+
+    <!-- Decision List -->
+    <div class="decision-list" id="decision-list">
+      <div class="decision-list-header">
+        <h3>Decisions</h3>
+        <button class="details-close" onclick="closeDecisionList()">×</button>
+      </div>
+      <div class="decision-list-items" id="decision-list-items"></div>
+    </div>
+
+    <!-- Decision Card -->
+    <div class="decision-card">
+      <div class="decision-header">
+        <div class="decision-meta">
+          <div class="meta-item">
+            <span class="meta-label">Decision ID</span>
+            <span class="meta-value" id="meta-id">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Timestamp</span>
+            <span class="meta-value" id="meta-time">—</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Agent</span>
+            <span class="meta-value" id="meta-agent">—</span>
+          </div>
+        </div>
+        <div class="outcome-badge" id="outcome-badge">—</div>
+      </div>
+      <div class="summary-bar" id="summary-bar"></div>
+    </div>
+
+    <!-- Flow Graph -->
+    <div class="flow-graph">
+      <div class="graph-container" id="graph-container">
+        <svg class="graph-svg" id="graph-svg">
+          <defs>
+            <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#06b6d4"/>
+              <stop offset="50%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <g id="connections"></g>
+          <g id="particles"></g>
+        </svg>
+        <div class="nodes-layer" id="nodes-layer"></div>
+      </div>
+    </div>
+
+    <!-- Details Panel -->
+    <div class="details-panel" id="details-panel">
+      <div class="details-header">
+        <span class="details-title" id="details-title">Details</span>
+        <button class="details-close" onclick="closeDetails()">×</button>
+      </div>
+      <div class="details-body" id="details-body"></div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <div class="modal-header">
+        <span style="font-weight:600">Load DecisionRecord</span>
+        <button class="details-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="json-input" placeholder="Paste DecisionRecord JSON..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="loadFromInput()">Visualize</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sampleRecord = {
+      decision_id: "3f35d5ee-adc5-4759-8376-290692970bf4",
+      run_id: "run_SUP-4312_20251227",
+      timestamp: "2025-12-27T11:10:24.646555",
+      outcome: "committed",
+      outcome_reason: "Credit issued via service_impact_exception route",
+      actor: { type: "agent", id: "exception-desk-agent", name: "Exception Desk Agent" },
+      evidence: [
+        { evidence_id: "ev_001", source: "support.get_ticket", retrieved_at: "2025-12-27T11:10:24.753846",
+          snapshot: { id: "SUP-4312", subject: "Service credit request", requested_credit_pct: 0.20, priority: "high" }},
+        { evidence_id: "ev_002", source: "crm.get_account", retrieved_at: "2025-12-27T11:10:24.855290",
+          snapshot: { name: "Acme Corp", tier: "enterprise", arr: 500000, churn_risk: "high", health_score: 45 }},
+        { evidence_id: "ev_003", source: "incidents.get_recent", retrieved_at: "2025-12-27T11:10:24.958681",
+          snapshot: { sev1_count: 3, sev2_count: 2, total_downtime_mins: 345 }}
+      ],
+      policies: [
+        { policy_id: "service_credit", version: "1.0", result: "warn",
+          message: "Requested 20% exceeds 10% cap. Exception: 3 SEV-1 incidents + high churn risk" }
+      ],
+      approvals: [
+        { approval_id: "apr_001", approver: { type: "human", id: "finance-lead@company.com", name: "Finance Lead" },
+          granted: true, granted_at: "2025-12-27T11:10:25.259990", reason: "Exception justified by service impact" }
+      ],
+      actions: [
+        { action_id: "act_001", tool: "billing.create_service_credit", committed_at: "2025-12-27T11:10:25.463745",
+          params: { account_id: "ACC-ACME-001", amount: 8333.40, credit_pct: 0.20 },
+          result: { credit_id: "CREDIT-71564", status: "issued" }, success: true }
+      ]
+    };
+
+    let currentRecord = null;
+    let animationFrame = null;
+    let decisionsCache = [];
+
+    function getApiUrl() { return document.getElementById('api-url').value.replace(/\/$/, ''); }
+
+    function loadSample() {
+      closeDecisionList();
+      renderRecord(sampleRecord);
+    }
+
+    function openModal() { document.getElementById('modal').classList.add('active'); }
+    function closeModal() { document.getElementById('modal').classList.remove('active'); }
+    function closeDecisionList() { document.getElementById('decision-list').classList.remove('active'); }
+
+    async function fetchDecisions() {
+      const listEl = document.getElementById('decision-list');
+      const itemsEl = document.getElementById('decision-list-items');
+      listEl.classList.add('active');
+      itemsEl.innerHTML = '<div class="loading-spinner">Loading decisions...</div>';
+
+      try {
+        const res = await fetch(`${getApiUrl()}/v1/decisions`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        decisionsCache = data.decisions || data || [];
+
+        if (decisionsCache.length === 0) {
+          itemsEl.innerHTML = '<div class="loading-spinner">No decisions found</div>';
+          return;
+        }
+
+        itemsEl.innerHTML = decisionsCache.map((d, i) => `
+          <div class="decision-list-item" onclick="selectDecision(${i})">
+            <div>
+              <div class="decision-item-id">${d.decision_id?.slice(0, 20) || 'Unknown'}...</div>
+              <div class="decision-item-time">${new Date(d.timestamp).toLocaleString()}</div>
+            </div>
+            <span class="decision-item-outcome ${d.outcome}">${d.outcome || '?'}</span>
+          </div>
+        `).join('');
+      } catch (e) {
+        itemsEl.innerHTML = `<div class="error-message">Failed to fetch: ${e.message}<br><br>Make sure the server is running at ${getApiUrl()}</div>`;
+      }
+    }
+
+    async function selectDecision(index) {
+      const decision = decisionsCache[index];
+      if (!decision) return;
+
+      // Mark selected
+      document.querySelectorAll('.decision-list-item').forEach((el, i) => {
+        el.classList.toggle('selected', i === index);
+      });
+
+      // Fetch full record
+      try {
+        const res = await fetch(`${getApiUrl()}/v1/decisions/${decision.decision_id}`);
+        if (res.ok) {
+          const full = await res.json();
+          // Transform DB format to UI format
+          const record = {
+            decision_id: full.decision_id,
+            run_id: full.run_id,
+            timestamp: full.timestamp,
+            outcome: full.outcome,
+            outcome_reason: full.outcome_reason,
+            actor: full.actor_id ? { type: full.actor_type, id: full.actor_id } : null,
+            evidence: full.evidence || [],
+            policies: full.policies || [],
+            approvals: full.approvals || [],
+            actions: full.actions || [],
+          };
+          renderRecord(record);
+          return;
+        }
+      } catch (e) {
+        console.log('Fetch failed, using cached:', e);
+      }
+
+      // Fallback to cached data
+      renderRecord(decision);
+    }
+
+    function loadFromInput() {
+      try {
+        const data = JSON.parse(document.getElementById('json-input').value);
+        renderRecord(data.record || data);
+        closeModal();
+      } catch(e) { alert('Invalid JSON: ' + e.message); }
+    }
+
+    function renderRecord(record) {
+      currentRecord = record;
+
+      // Header
+      document.getElementById('meta-id').textContent = record.decision_id?.slice(0, 18) + '...' || '—';
+      document.getElementById('meta-time').textContent = new Date(record.timestamp).toLocaleString();
+      document.getElementById('meta-agent').textContent = record.actor?.name || record.actor?.id || '—';
+
+      const badge = document.getElementById('outcome-badge');
+      badge.textContent = (record.outcome || 'unknown').toUpperCase();
+      badge.className = 'outcome-badge outcome-' + record.outcome;
+
+      // Summary bar
+      const summaryBar = document.getElementById('summary-bar');
+      const steps = [];
+      if (record.evidence?.length) steps.push({ n: record.evidence.length, t: 'Evidence' });
+      if (record.policies?.length) steps.push({ n: record.policies.length, t: 'Policy' });
+      if (record.approvals?.length) steps.push({ n: record.approvals.length, t: 'Approval' });
+      if (record.actions?.length) steps.push({ n: record.actions.length, t: 'Action' });
+
+      summaryBar.innerHTML = steps.map((s, i) =>
+        `${i > 0 ? '<span class="summary-arrow">→</span>' : ''}<div class="summary-step"><span class="num">${s.n}</span>${s.t}</div>`
+      ).join('');
+
+      renderGraph(record);
+      closeDetails();
+    }
+
+    function renderGraph(record) {
+      const container = document.getElementById('nodes-layer');
+      const graphContainer = document.getElementById('graph-container');
+      const svg = document.getElementById('graph-svg');
+      const connG = document.getElementById('connections');
+      const particlesG = document.getElementById('particles');
+
+      connG.innerHTML = '';
+      particlesG.innerHTML = '';
+
+      const columns = [
+        { id: 'evidence', label: 'EVIDENCE', items: record.evidence || [], icon: '📊', type: 'evidence' },
+        { id: 'policy', label: 'POLICY', items: record.policies || [], icon: '📋', type: 'policy' },
+        { id: 'approval', label: 'APPROVAL', items: record.approvals || [], icon: '👤', type: 'approval' },
+        { id: 'action', label: 'ACTION', items: record.actions || [], icon: '⚡', type: 'action' }
+      ];
+
+      // Calculate dynamic height based on max items
+      const maxItems = Math.max(...columns.map(c => c.items.length || 1));
+      const nodeHeight = 95; // Approximate height of each node + gap
+      const headerHeight = 50;
+      const dynamicHeight = Math.max(350, headerHeight + maxItems * nodeHeight);
+      graphContainer.style.height = dynamicHeight + 'px';
+
+      const containerRect = graphContainer.getBoundingClientRect();
+      const colWidth = containerRect.width / 4;
+
+      container.innerHTML = columns.map((col, ci) => {
+        const left = ci * colWidth + (colWidth - 180) / 2;
+
+        const nodes = col.items.length ? col.items.map((item, i) => {
+          const status = getStatus(item, col.type);
+          return `
+            <div class="node" onclick="showDetails('${col.type}', ${i})" data-col="${ci}" data-row="${i}">
+              <div class="node-glow"></div>
+              ${status ? `<span class="node-status status-${status}"></span>` : ''}
+              <div class="node-header">
+                <div class="node-icon ${col.type}">${col.icon}</div>
+              </div>
+              <div class="node-title">${getTitle(item, col.type)}</div>
+              <div class="node-subtitle">${getSubtitle(item, col.type)}</div>
+            </div>
+          `;
+        }).join('') : `
+          <div class="node" style="opacity:0.5;cursor:default">
+            <div class="node-header"><div class="node-icon ${col.type}">${col.icon}</div></div>
+            <div class="node-title">No ${col.label.toLowerCase()}</div>
+          </div>
+        `;
+
+        return `
+          <div class="graph-column" style="left:${left}px">
+            <div class="column-label">${col.label}</div>
+            ${nodes}
+          </div>
+        `;
+      }).join('');
+
+      // Draw connections after DOM update
+      requestAnimationFrame(() => drawConnections(columns));
+    }
+
+    function drawConnections(columns) {
+      const svg = document.getElementById('graph-svg');
+      const connG = document.getElementById('connections');
+      const particlesG = document.getElementById('particles');
+      const svgRect = svg.getBoundingClientRect();
+
+      const nodePositions = [];
+      document.querySelectorAll('.node[data-col]').forEach(node => {
+        const rect = node.getBoundingClientRect();
+        const col = parseInt(node.dataset.col);
+        const row = parseInt(node.dataset.row);
+        if (!nodePositions[col]) nodePositions[col] = [];
+        nodePositions[col][row] = {
+          x: rect.left - svgRect.left + rect.width / 2,
+          y: rect.top - svgRect.top + rect.height / 2,
+          right: rect.left - svgRect.left + rect.width,
+          left: rect.left - svgRect.left
+        };
+      });
+
+      // Draw bezier curves between columns
+      for (let c = 0; c < nodePositions.length - 1; c++) {
+        const from = nodePositions[c];
+        const to = nodePositions[c + 1];
+        if (!from?.length || !to?.length) continue;
+
+        from.forEach((f, fi) => {
+          to.forEach((t, ti) => {
+            const x1 = f.right + 10;
+            const y1 = f.y;
+            const x2 = t.left - 10;
+            const y2 = t.y;
+            const cx1 = x1 + (x2 - x1) * 0.4;
+            const cx2 = x1 + (x2 - x1) * 0.6;
+
+            const pathD = `M ${x1} ${y1} C ${cx1} ${y1}, ${cx2} ${y2}, ${x2} ${y2}`;
+
+            // Glow path
+            const glowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            glowPath.setAttribute('d', pathD);
+            glowPath.setAttribute('class', 'flow-path-glow');
+            connG.appendChild(glowPath);
+
+            // Main path
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathD);
+            path.setAttribute('class', 'flow-path');
+            path.id = `path-${c}-${fi}-${ti}`;
+            connG.appendChild(path);
+
+            // Particle
+            const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            particle.setAttribute('r', '4');
+            particle.setAttribute('class', 'flow-particle');
+            particle.dataset.path = path.id;
+            particle.dataset.offset = Math.random();
+            particlesG.appendChild(particle);
+          });
+        });
+      }
+
+      animateParticles();
+    }
+
+    function animateParticles() {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+
+      const particles = document.querySelectorAll('.flow-particle');
+      let time = 0;
+
+      function animate() {
+        time += 0.003;
+        particles.forEach(p => {
+          const path = document.getElementById(p.dataset.path);
+          if (!path) return;
+          const len = path.getTotalLength();
+          const offset = parseFloat(p.dataset.offset);
+          const pos = ((time + offset) % 1) * len;
+          const point = path.getPointAtLength(pos);
+          p.setAttribute('cx', point.x);
+          p.setAttribute('cy', point.y);
+        });
+        animationFrame = requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    function getStatus(item, type) {
+      if (type === 'policy') return item.result === 'pass' ? 'pass' : item.result === 'fail' ? 'fail' : 'warn';
+      if (type === 'approval') return item.granted ? 'pass' : 'fail';
+      if (type === 'action') return item.success ? 'pass' : 'fail';
+      return null;
+    }
+
+    function getTitle(item, type) {
+      if (type === 'evidence') return item.source || item.tool_name || 'Evidence';
+      if (type === 'policy') return `${item.policy_id} v${item.version}`;
+      if (type === 'approval') return item.granted ? 'Approved' : 'Denied';
+      if (type === 'action') return item.tool;
+      return '—';
+    }
+
+    function getSubtitle(item, type) {
+      if (type === 'evidence') return new Date(item.retrieved_at).toLocaleTimeString();
+      if (type === 'policy') return item.result?.toUpperCase();
+      if (type === 'approval') return item.approver?.id || item.approver?.name || '';
+      if (type === 'action') return item.success ? 'Success' : 'Failed';
+      return '';
+    }
+
+    function showDetails(type, index) {
+      const panel = document.getElementById('details-panel');
+      const title = document.getElementById('details-title');
+      const body = document.getElementById('details-body');
+
+      const items = { evidence: currentRecord.evidence, policy: currentRecord.policies,
+                      approval: currentRecord.approvals, action: currentRecord.actions };
+      const item = items[type]?.[index];
+      if (!item) return;
+
+      const icons = { evidence: '📊', policy: '📋', approval: '👤', action: '⚡' };
+      title.innerHTML = `${icons[type]} ${getTitle(item, type)}`;
+
+      body.innerHTML = renderDetails(item, type);
+      panel.classList.add('active');
+
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+      document.querySelector(`.node[data-col="${['evidence','policy','approval','action'].indexOf(type)}"][data-row="${index}"]`)?.classList.add('active');
+    }
+
+    function closeDetails() {
+      document.getElementById('details-panel').classList.remove('active');
+      document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+    }
+
+    function renderDetails(item, type) {
+      let grid = '', json = '';
+
+      if (type === 'evidence') {
+        grid = `
+          <div class="detail-card"><div class="detail-label">Source</div><div class="detail-value">${item.source}</div></div>
+          <div class="detail-card"><div class="detail-label">Retrieved</div><div class="detail-value">${new Date(item.retrieved_at).toLocaleString()}</div></div>
+          <div class="detail-card"><div class="detail-label">ID</div><div class="detail-value">${item.evidence_id || '—'}</div></div>
+        `;
+        json = item.snapshot;
+      } else if (type === 'policy') {
+        const color = item.result === 'pass' ? 'var(--green)' : item.result === 'fail' ? 'var(--red)' : 'var(--yellow)';
+        grid = `
+          <div class="detail-card"><div class="detail-label">Policy</div><div class="detail-value">${item.policy_id}</div></div>
+          <div class="detail-card"><div class="detail-label">Version</div><div class="detail-value">${item.version}</div></div>
+          <div class="detail-card"><div class="detail-label">Result</div><div class="detail-value" style="color:${color};font-weight:600">${item.result?.toUpperCase()}</div></div>
+        `;
+        json = { message: item.message };
+      } else if (type === 'approval') {
+        const color = item.granted ? 'var(--green)' : 'var(--red)';
+        grid = `
+          <div class="detail-card"><div class="detail-label">Approver</div><div class="detail-value">${item.approver?.id || item.approver?.name}</div></div>
+          <div class="detail-card"><div class="detail-label">Decision</div><div class="detail-value" style="color:${color};font-weight:600">${item.granted ? 'APPROVED' : 'DENIED'}</div></div>
+          <div class="detail-card"><div class="detail-label">Time</div><div class="detail-value">${new Date(item.granted_at).toLocaleString()}</div></div>
+        `;
+        json = { reason: item.reason };
+      } else if (type === 'action') {
+        const color = item.success ? 'var(--green)' : 'var(--red)';
+        grid = `
+          <div class="detail-card"><div class="detail-label">Tool</div><div class="detail-value">${item.tool}</div></div>
+          <div class="detail-card"><div class="detail-label">Status</div><div class="detail-value" style="color:${color};font-weight:600">${item.success ? 'SUCCESS' : 'FAILED'}</div></div>
+          <div class="detail-card"><div class="detail-label">Time</div><div class="detail-value">${new Date(item.committed_at).toLocaleString()}</div></div>
+        `;
+        json = { params: item.params, result: item.result };
+      }
+
+      return `
+        <div class="details-grid">${grid}</div>
+        <div class="detail-label" style="margin-bottom:0.5rem">Data</div>
+        <div class="json-block">${JSON.stringify(json, null, 2)}</div>
+      `;
+    }
+
+    // Init
+    loadSample();
+    window.addEventListener('resize', () => currentRecord && renderGraph(currentRecord));
+  </script>
+</body>
+</html>

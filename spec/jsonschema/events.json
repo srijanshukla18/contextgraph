@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://contextgraph.dev/schemas/events.json",
+  "title": "ContextGraph Events",
+  "description": "Append-only event types for decision traces",
+  "definitions": {
+    "EventEnvelope": {
+      "type": "object",
+      "required": ["event_id", "timestamp", "run_id", "event_type", "payload"],
+      "properties": {
+        "event_id": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "tenant_id": { "type": "string" },
+        "trace_id": { "type": "string" },
+        "span_id": { "type": "string" },
+        "run_id": { "type": "string" },
+        "actor": { "$ref": "decision_record.json#/definitions/Actor" },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "observation.read",
+            "policy.evaluated",
+            "decision.created",
+            "approval.requested",
+            "approval.granted",
+            "approval.denied",
+            "action.committed"
+          ]
+        },
+        "payload": { "type": "object" }
+      }
+    },
+    "ObservationReadPayload": {
+      "type": "object",
+      "required": ["source", "entity_ref"],
+      "properties": {
+        "source": { "type": "string" },
+        "entity_ref": { "$ref": "decision_record.json#/definitions/EntityRef" },
+        "snapshot": { "type": "object" },
+        "snapshot_hash": { "type": "string" },
+        "tool_name": { "type": "string" },
+        "tool_args": { "type": "object" }
+      }
+    },
+    "PolicyEvaluatedPayload": {
+      "type": "object",
+      "required": ["policy_id", "version", "result"],
+      "properties": {
+        "policy_id": { "type": "string" },
+        "version": { "type": "string" },
+        "result": { "type": "string", "enum": ["pass", "fail", "warn", "skip"] },
+        "inputs_hash": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "DecisionCreatedPayload": {
+      "type": "object",
+      "required": ["decision_id", "proposed_action"],
+      "properties": {
+        "decision_id": { "type": "string" },
+        "proposed_action": { "type": "string" },
+        "alternatives": { "type": "array", "items": { "type": "string" } },
+        "rationale": { "type": "string" }
+      }
+    },
+    "ActionCommittedPayload": {
+      "type": "object",
+      "required": ["action_id", "tool", "success"],
+      "properties": {
+        "action_id": { "type": "string" },
+        "tool": { "type": "string" },
+        "operation": { "type": "string" },
+        "target_entity": { "$ref": "decision_record.json#/definitions/EntityRef" },
+        "params": { "type": "object" },
+        "result": { "type": "object" },
+        "success": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://contextgraph.dev/schemas/decision_record.json",
+  "title": "DecisionRecord",
+  "description": "A complete record of a decision made by an agent/workflow",
+  "type": "object",
+  "required": ["decision_id", "run_id", "timestamp", "outcome"],
+  "properties": {
+    "decision_id": {
+      "type": "string",
+      "description": "Unique identifier for this decision (ULID recommended)"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Identifier for the agent/workflow run"
+    },
+    "trace_id": {
+      "type": "string",
+      "description": "OpenTelemetry trace ID if available"
+    },
+    "span_id": {
+      "type": "string",
+      "description": "OpenTelemetry span ID if available"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the decision was made"
+    },
+    "actor": {
+      "$ref": "#/definitions/Actor"
+    },
+    "subject_entities": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/EntityRef" },
+      "description": "Primary entities this decision concerns"
+    },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Evidence" },
+      "description": "Inputs/observations used to make this decision"
+    },
+    "policies": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/PolicyEval" },
+      "description": "Policies evaluated during this decision"
+    },
+    "approvals": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Approval" },
+      "description": "Human approvals granted"
+    },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Action" },
+      "description": "Side effects / writes committed"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["committed", "denied", "escalated", "pending"],
+      "description": "Final outcome of the decision"
+    },
+    "outcome_reason": {
+      "type": "string",
+      "description": "Brief explanation of outcome"
+    },
+    "precedent_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Decision IDs of similar past decisions"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Framework-specific metadata"
+    }
+  },
+  "definitions": {
+    "EntityRef": {
+      "type": "object",
+      "required": ["namespace", "type", "id"],
+      "properties": {
+        "namespace": { "type": "string" },
+        "type": { "type": "string" },
+        "id": { "type": "string" },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "Actor": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["agent", "human", "system"]
+        },
+        "id": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "Evidence": {
+      "type": "object",
+      "required": ["evidence_id", "source", "retrieved_at"],
+      "properties": {
+        "evidence_id": { "type": "string" },
+        "source": { "type": "string" },
+        "entity_ref": { "$ref": "#/definitions/EntityRef" },
+        "snapshot": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "State at decision time"
+        },
+        "snapshot_hash": { "type": "string" },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "PolicyEval": {
+      "type": "object",
+      "required": ["policy_id", "version", "result"],
+      "properties": {
+        "policy_id": { "type": "string" },
+        "version": { "type": "string" },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail", "warn", "skip"]
+        },
+        "inputs_hash": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "Approval": {
+      "type": "object",
+      "required": ["approval_id", "approver", "granted_at", "granted"],
+      "properties": {
+        "approval_id": { "type": "string" },
+        "approver": { "$ref": "#/definitions/Actor" },
+        "granted": { "type": "boolean" },
+        "granted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reason": { "type": "string" }
+      }
+    },
+    "Action": {
+      "type": "object",
+      "required": ["action_id", "tool", "committed_at"],
+      "properties": {
+        "action_id": { "type": "string" },
+        "tool": { "type": "string" },
+        "operation": { "type": "string" },
+        "target_entity": { "$ref": "#/definitions/EntityRef" },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "result": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "committed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "success": { "type": "boolean" }
+      }
+    }
+  }
+}
