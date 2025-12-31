@@ -32,6 +32,7 @@
       --font-display: 'Space Grotesk', system-ui, sans-serif;
       --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
       --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --focus-ring: 0 0 0 2px var(--bg-void), 0 0 0 4px var(--accent-cyan);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,6 +44,28 @@
       min-height: 100vh;
       line-height: 1.5;
     }
+
+    :focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    :focus:not(:focus-visible) { outline: none; }
+
+    .skip-link {
+      position: absolute;
+      top: -100%;
+      left: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--accent-cyan);
+      color: var(--bg-void);
+      font-weight: 600;
+      border-radius: 0 0 6px 6px;
+      z-index: 9999;
+      transition: top 0.2s;
+    }
+
+    .skip-link:focus { top: 0; box-shadow: none; }
 
     .atmosphere {
       position: fixed;
@@ -65,7 +88,22 @@
 
     @media (max-width: 1024px) {
       .app { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
+      .sidebar:not(.sidebar-open) { transform: translateX(-100%); }
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 8, 15, 0.8);
+      z-index: 99;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+      opacity: 1;
     }
 
     .header {
@@ -80,10 +118,68 @@
       flex-wrap: wrap;
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .menu-btn {
+      display: none;
+      width: 40px;
+      height: 40px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      cursor: pointer;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 10px;
+      transition: all 0.2s;
+    }
+
+    .menu-btn:hover, .menu-btn:focus-visible {
+      background: var(--bg-card);
+      border-color: var(--accent-cyan);
+    }
+
+    .menu-btn span {
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: var(--text-primary);
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+
+    .menu-btn.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .menu-btn.active span:nth-child(2) { opacity: 0; }
+    .menu-btn.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+    @media (max-width: 1024px) {
+      .menu-btn { display: flex; }
+    }
+
     .logo {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .logo:hover {
+      background: var(--bg-elevated);
+    }
+
+    .logo:focus-visible {
+      background: var(--bg-elevated);
     }
 
     .logo-mark {
@@ -119,15 +215,28 @@
       font-size: 1.25rem;
       font-weight: 700;
       letter-spacing: -0.02em;
+      color: var(--text-primary);
     }
 
     .logo-text span { color: var(--accent-cyan); }
+
+    @media (max-width: 480px) {
+      .logo-text { display: none; }
+    }
 
     .header-controls {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+      .header-controls {
+        width: 100%;
+        justify-content: center;
+      }
+      .header-controls .input-field { width: 100%; max-width: 300px; }
     }
 
     .input-field {
@@ -139,6 +248,7 @@
       font-family: var(--font-mono);
       font-size: 0.8125rem;
       width: 220px;
+      transition: all 0.2s;
     }
 
     .input-field:focus {
@@ -158,11 +268,21 @@
       font-weight: 500;
       cursor: pointer;
       transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      min-height: 36px;
     }
 
     .btn:hover {
       background: var(--bg-card);
       border-color: var(--border-active);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .btn-primary {
@@ -172,17 +292,50 @@
       font-weight: 600;
     }
 
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
       transform: translateY(-1px);
       box-shadow: 0 4px 20px rgba(34, 211, 238, 0.3);
     }
 
+    .btn-loading { pointer-events: none; }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 320px;
       background: var(--bg-surface);
       border-right: 1px solid var(--border-subtle);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s var(--ease-out-expo);
+    }
+
+    @media (min-width: 1025px) {
+      .sidebar {
+        position: relative;
+        transform: none !important;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar { top: 0; padding-top: 0; }
     }
 
     .sidebar-header {
@@ -193,12 +346,39 @@
       justify-content: space-between;
     }
 
+    @media (max-width: 1024px) {
+      .sidebar-header {
+        padding-top: 1.25rem;
+        margin-top: 60px;
+      }
+    }
+
     .sidebar-title {
       font-size: 0.6875rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       color: var(--text-muted);
+    }
+
+    .sidebar-close {
+      display: none;
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1.25rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar-close:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+    @media (max-width: 1024px) {
+      .sidebar-close { display: flex; }
     }
 
     .decision-count {
@@ -216,6 +396,8 @@
       padding: 0.5rem;
     }
 
+    .decision-list:focus { outline: none; }
+
     .decision-item {
       padding: 0.875rem 1rem;
       border-radius: 8px;
@@ -226,6 +408,7 @@
     }
 
     .decision-item:hover { background: var(--bg-elevated); }
+    .decision-item:focus-visible { background: var(--bg-elevated); }
 
     .decision-item.active {
       background: var(--accent-cyan-dim);
@@ -243,6 +426,10 @@
       font-family: var(--font-mono);
       font-size: 0.75rem;
       color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 140px;
     }
 
     .decision-item-outcome {
@@ -251,6 +438,7 @@
       text-transform: uppercase;
       padding: 0.125rem 0.375rem;
       border-radius: 3px;
+      flex-shrink: 0;
     }
 
     .outcome-committed { background: var(--accent-emerald-dim); color: var(--accent-emerald); }
@@ -270,6 +458,30 @@
     .main {
       padding: 1.5rem;
       overflow-y: auto;
+    }
+
+    @media (max-width: 640px) {
+      .main { padding: 1rem; }
+    }
+
+    .detail-loading {
+      position: absolute;
+      inset: 0;
+      background: rgba(5, 8, 15, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      z-index: 10;
+    }
+
+    .detail-loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-default);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
 
     .detail-header {
@@ -294,15 +506,20 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 2rem;
+      gap: 1.5rem;
       margin-bottom: 1.25rem;
       flex-wrap: wrap;
     }
 
     .detail-meta {
       display: flex;
-      gap: 2.5rem;
+      gap: 2rem;
       flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+      .detail-meta { gap: 1rem; }
+      .detail-meta .meta-group { min-width: 45%; }
     }
 
     .meta-group {
@@ -323,6 +540,7 @@
       font-family: var(--font-mono);
       font-size: 0.875rem;
       color: var(--text-primary);
+      word-break: break-all;
     }
 
     .outcome-badge {
@@ -366,6 +584,19 @@
       color: var(--text-secondary);
     }
 
+    .flow-step-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .flow-step-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+
     .flow-step-count {
       font-family: var(--font-mono);
       font-weight: 600;
@@ -381,6 +612,11 @@
       padding: 2rem;
       margin-bottom: 1.5rem;
       overflow-x: auto;
+      position: relative;
+    }
+
+    @media (max-width: 640px) {
+      .flow-container { padding: 1rem; }
     }
 
     .flow-grid {
@@ -411,13 +647,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
     }
 
-    .flow-column-icon.evidence { background: var(--accent-cyan-dim); }
-    .flow-column-icon.policy { background: var(--accent-amber-dim); }
-    .flow-column-icon.approval { background: var(--accent-violet-dim); }
-    .flow-column-icon.action { background: var(--accent-emerald-dim); }
+    .flow-column-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .flow-column-icon.evidence { background: var(--accent-cyan-dim); color: var(--accent-cyan); }
+    .flow-column-icon.policy { background: var(--accent-amber-dim); color: var(--accent-amber); }
+    .flow-column-icon.approval { background: var(--accent-violet-dim); color: var(--accent-violet); }
+    .flow-column-icon.action { background: var(--accent-emerald-dim); color: var(--accent-emerald); }
 
     .flow-column-title {
       font-size: 0.6875rem;
@@ -442,6 +682,8 @@
       transform: translateY(-2px);
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
     }
+
+    .flow-node:focus-visible { border-color: var(--accent-cyan); }
 
     .flow-node.active {
       border-color: var(--accent-cyan);
@@ -515,18 +757,27 @@
       font-weight: 600;
     }
 
+    .detail-panel-title svg {
+      width: 16px;
+      height: 16px;
+    }
+
     .detail-panel-close {
-      width: 28px;
-      height: 28px;
+      width: 36px;
+      height: 36px;
       border-radius: 6px;
       background: transparent;
-      border: none;
+      border: 1px solid var(--border-default);
       color: var(--text-muted);
       cursor: pointer;
       font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
     }
 
-    .detail-panel-close:hover { background: var(--bg-card); color: var(--text-primary); }
+    .detail-panel-close:hover { background: var(--bg-card); color: var(--text-primary); border-color: var(--border-active); }
 
     .detail-panel-body { padding: 1.25rem; }
 
@@ -568,7 +819,7 @@
       color: var(--text-secondary);
       overflow: auto;
       white-space: pre-wrap;
-      max-height: 200px;
+      max-height: 300px;
     }
 
     .modal-overlay {
@@ -591,6 +842,8 @@
       border-radius: 16px;
       width: 100%;
       max-width: 600px;
+      max-height: 90vh;
+      overflow: auto;
     }
 
     .modal-header {
@@ -616,6 +869,8 @@
       font-size: 0.8125rem;
       padding: 1rem;
       resize: vertical;
+      min-height: 150px;
+      max-height: 60vh;
     }
 
     .modal textarea:focus {
@@ -635,6 +890,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 0.75rem;
       padding: 3rem;
       color: var(--text-muted);
     }
@@ -649,6 +905,22 @@
       margin: 1rem;
     }
 
+    .error-message-actions {
+      margin-top: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .error-message .btn {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+      background: rgba(251, 113, 133, 0.2);
+      border-color: rgba(251, 113, 133, 0.4);
+      color: var(--accent-rose);
+    }
+
+    .error-message .btn:hover { background: rgba(251, 113, 133, 0.3); }
+
     .welcome {
       display: flex;
       flex-direction: column;
@@ -659,88 +931,200 @@
       min-height: 60vh;
     }
 
-    .welcome-icon { font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.6; }
+    .welcome-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--accent-cyan-dim);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .welcome-icon svg {
+      width: 40px;
+      height: 40px;
+      color: var(--accent-cyan);
+    }
+
     .welcome-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
     .welcome-desc { color: var(--text-secondary); max-width: 400px; margin-bottom: 2rem; }
-    .welcome-actions { display: flex; gap: 0.75rem; }
+    .welcome-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; }
 
     .status-pass { color: var(--accent-emerald); }
     .status-fail { color: var(--accent-rose); }
     .status-warn { color: var(--accent-amber); }
+
+    .toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .toast {
+      padding: 0.875rem 1.25rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.8125rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      animation: toastIn 0.3s var(--ease-out-expo);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      max-width: 350px;
+    }
+
+    .toast.toast-error {
+      border-color: rgba(251, 113, 133, 0.4);
+      background: var(--accent-rose-dim);
+    }
+
+    .toast.toast-success {
+      border-color: rgba(52, 211, 153, 0.4);
+      background: var(--accent-emerald-dim);
+    }
+
+    .toast-exit { animation: toastOut 0.2s ease-in forwards; }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(20px); }
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .live-region {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
   </style>
 </head>
 <body>
-  <div class="atmosphere"></div>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div aria-live="polite" aria-atomic="true" class="live-region" id="live-region"></div>
+
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <div class="toast-container" id="toast-container" role="status" aria-live="polite"></div>
 
   <div class="app">
-    <header class="header">
-      <div class="logo">
-        <div class="logo-mark"></div>
-        <div class="logo-text">Context<span>Graph</span></div>
+    <header class="header" role="banner">
+      <div class="header-left">
+        <button class="menu-btn" id="menu-btn" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="sidebar">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <button class="logo" id="logo-btn" aria-label="Return to home">
+          <div class="logo-mark" aria-hidden="true"></div>
+          <div class="logo-text">Context<span>Graph</span></div>
+        </button>
       </div>
       <div class="header-controls">
-        <input type="text" id="api-url" class="input-field" value="http://localhost:8080" placeholder="API URL">
-        <button class="btn" id="btn-fetch">Fetch</button>
-        <button class="btn" id="btn-paste">Paste JSON</button>
-        <button class="btn btn-primary" id="btn-demo">Demo</button>
+        <label class="sr-only" for="api-url">API Server URL</label>
+        <input type="url" id="api-url" class="input-field" value="http://localhost:8080" placeholder="API URL" aria-describedby="api-url-hint">
+        <span id="api-url-hint" class="sr-only">Enter the URL of your ContextGraph server</span>
+        <button class="btn" id="btn-fetch" aria-label="Fetch decisions from server">Fetch</button>
+        <button class="btn" id="btn-paste" aria-label="Open dialog to paste JSON">Paste JSON</button>
+        <button class="btn btn-primary" id="btn-demo" aria-label="Load demo decision data">Demo</button>
       </div>
     </header>
 
-    <aside class="sidebar" id="sidebar">
+    <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+    <aside class="sidebar" id="sidebar" role="complementary" aria-label="Decision list">
       <div class="sidebar-header">
-        <span class="sidebar-title">Decisions</span>
-        <span class="decision-count" id="decision-count">0</span>
+        <span class="sidebar-title" id="sidebar-title">Decisions</span>
+        <span class="decision-count" id="decision-count" aria-label="Number of decisions">0</span>
+        <button class="sidebar-close" id="sidebar-close" aria-label="Close navigation">
+          <span aria-hidden="true">×</span>
+        </button>
       </div>
-      <div class="decision-list" id="decision-list"></div>
+      <div class="decision-list" id="decision-list" role="listbox" aria-labelledby="sidebar-title" tabindex="0"></div>
     </aside>
 
-    <main class="main" id="main-content">
+    <main class="main" id="main-content" role="main">
       <div class="welcome" id="welcome">
-        <div class="welcome-icon">🔍</div>
-        <h2 class="welcome-title">Decision Explorer</h2>
+        <div class="welcome-icon" aria-hidden="true" id="welcome-icon"></div>
+        <h1 class="welcome-title">Decision Explorer</h1>
         <p class="welcome-desc">Visualize and analyze AI agent decisions. Load from your ContextGraph server or paste a DecisionRecord JSON.</p>
         <div class="welcome-actions">
           <button class="btn" id="btn-welcome-fetch">Connect to Server</button>
           <button class="btn btn-primary" id="btn-welcome-demo">View Demo</button>
         </div>
       </div>
-      <div id="detail-view" style="display: none;">
+      <div id="detail-view" style="display: none;" aria-labelledby="detail-heading">
+        <h2 id="detail-heading" class="sr-only">Decision Details</h2>
         <div class="detail-header">
           <div class="detail-header-top">
             <div class="detail-meta">
               <div class="meta-group">
-                <span class="meta-label">Decision ID</span>
-                <span class="meta-value" id="meta-id">—</span>
+                <span class="meta-label" id="label-id">Decision ID</span>
+                <span class="meta-value" id="meta-id" aria-labelledby="label-id">—</span>
               </div>
               <div class="meta-group">
-                <span class="meta-label">Timestamp</span>
-                <span class="meta-value" id="meta-time">—</span>
+                <span class="meta-label" id="label-time">Timestamp</span>
+                <span class="meta-value" id="meta-time" aria-labelledby="label-time">—</span>
               </div>
               <div class="meta-group">
-                <span class="meta-label">Agent</span>
-                <span class="meta-value" id="meta-agent">—</span>
+                <span class="meta-label" id="label-agent">Agent</span>
+                <span class="meta-value" id="meta-agent" aria-labelledby="label-agent">—</span>
               </div>
             </div>
-            <div class="outcome-badge" id="outcome-badge">—</div>
+            <div class="outcome-badge" id="outcome-badge" role="status">—</div>
           </div>
-          <div class="flow-summary" id="flow-summary"></div>
+          <div class="flow-summary" id="flow-summary" aria-label="Decision flow summary"></div>
         </div>
-        <div class="flow-container">
-          <div class="flow-grid" id="flow-grid"></div>
+        <div class="flow-container" id="flow-container">
+          <div class="flow-grid" id="flow-grid" role="grid" aria-label="Decision flow stages"></div>
         </div>
-        <div id="detail-panel"></div>
+        <div id="detail-panel" aria-live="polite"></div>
       </div>
     </main>
   </div>
 
-  <div class="modal-overlay" id="modal">
+  <div class="modal-overlay" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
       <div class="modal-header">
-        <span class="modal-title">Load DecisionRecord</span>
-        <button class="detail-panel-close" id="modal-close">×</button>
+        <span class="modal-title" id="modal-title">Load DecisionRecord</span>
+        <button class="detail-panel-close" id="modal-close" aria-label="Close dialog">
+          <span aria-hidden="true">×</span>
+        </button>
       </div>
       <div class="modal-body">
-        <textarea id="json-input" placeholder="Paste DecisionRecord JSON here..."></textarea>
+        <label class="sr-only" for="json-input">DecisionRecord JSON</label>
+        <textarea id="json-input" placeholder="Paste DecisionRecord JSON here..." aria-describedby="json-hint"></textarea>
+        <span id="json-hint" class="sr-only">Paste a valid DecisionRecord JSON object</span>
       </div>
       <div class="modal-footer">
         <button class="btn" id="modal-cancel">Cancel</button>
@@ -750,7 +1134,183 @@
   </div>
 
   <script>
-    // Safe DOM utilities
+    // ====================
+    // SVG Icon Creator (Safe DOM method)
+    // ====================
+    function createSvgIcon(type) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '16');
+      svg.setAttribute('height', '16');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      svg.setAttribute('stroke-width', '2');
+      svg.setAttribute('stroke-linecap', 'round');
+      svg.setAttribute('stroke-linejoin', 'round');
+      svg.setAttribute('aria-hidden', 'true');
+
+      if (type === 'evidence') {
+        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path1.setAttribute('d', 'M3 3v18h18');
+        const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path2.setAttribute('d', 'M18 17l-5-5-4 4-3-3');
+        svg.appendChild(path1);
+        svg.appendChild(path2);
+      } else if (type === 'policy') {
+        const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path1.setAttribute('d', 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2');
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', '9');
+        rect.setAttribute('y', '3');
+        rect.setAttribute('width', '6');
+        rect.setAttribute('height', '4');
+        rect.setAttribute('rx', '1');
+        const path2 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path2.setAttribute('d', 'M9 12h6m-6 4h6');
+        svg.appendChild(path1);
+        svg.appendChild(rect);
+        svg.appendChild(path2);
+      } else if (type === 'approval') {
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '12');
+        circle.setAttribute('cy', '8');
+        circle.setAttribute('r', '4');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M20 21a8 8 0 00-16 0');
+        svg.appendChild(circle);
+        svg.appendChild(path);
+      } else if (type === 'action') {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M13 2L3 14h9l-1 8 10-12h-9l1-8z');
+        svg.appendChild(path);
+      } else if (type === 'search') {
+        svg.setAttribute('width', '40');
+        svg.setAttribute('height', '40');
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '11');
+        circle.setAttribute('cy', '11');
+        circle.setAttribute('r', '8');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M21 21l-4.35-4.35');
+        svg.appendChild(circle);
+        svg.appendChild(path);
+      } else if (type === 'close') {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M18 6L6 18M6 6l12 12');
+        svg.appendChild(path);
+      }
+
+      return svg;
+    }
+
+    // ====================
+    // State Manager
+    // ====================
+    const State = {
+      currentRecord: null,
+      decisionsCache: [],
+      selectedIndex: -1,
+      isLoading: false,
+      detailAbortController: null,
+
+      reset() {
+        this.currentRecord = null;
+        this.decisionsCache = [];
+        this.selectedIndex = -1;
+        this.isLoading = false;
+        if (this.detailAbortController) {
+          this.detailAbortController.abort();
+          this.detailAbortController = null;
+        }
+      },
+
+      setDecisions(decisions) {
+        this.decisionsCache = decisions;
+        this.selectedIndex = -1;
+      },
+
+      selectIndex(index) {
+        this.selectedIndex = index;
+      },
+
+      setRecord(record) {
+        this.currentRecord = record;
+      }
+    };
+
+    // ====================
+    // API Configuration
+    // ====================
+    const API = {
+      TIMEOUT_MS: 10000,
+      MAX_RETRIES: 3,
+      RETRY_DELAYS: [1000, 2000, 4000],
+
+      getBaseUrl() {
+        return document.getElementById('api-url').value.replace(/\/$/, '');
+      },
+
+      async fetchWithTimeout(url, options = {}, timeoutMs = this.TIMEOUT_MS) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+          const response = await fetch(url, {
+            ...options,
+            signal: options.signal || controller.signal
+          });
+          clearTimeout(timeoutId);
+          return response;
+        } catch (error) {
+          clearTimeout(timeoutId);
+          if (error.name === 'AbortError') {
+            throw new Error('Request timed out. Please check your connection and try again.');
+          }
+          throw error;
+        }
+      },
+
+      async fetchWithRetry(url, options = {}, retries = this.MAX_RETRIES) {
+        let lastError;
+
+        for (let i = 0; i < retries; i++) {
+          try {
+            const response = await this.fetchWithTimeout(url, options);
+            return response;
+          } catch (error) {
+            lastError = error;
+            if (i < retries - 1 && !error.message.includes('timed out')) {
+              await new Promise(r => setTimeout(r, this.RETRY_DELAYS[i] || 1000));
+            }
+          }
+        }
+
+        throw lastError;
+      },
+
+      formatError(error, statusCode) {
+        if (error.message.includes('timed out')) {
+          return 'Connection timed out. Is the server running?';
+        }
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          return 'Cannot connect to server. Check if the URL is correct and the server is running.';
+        }
+        if (statusCode === 401 || statusCode === 403) {
+          return 'Authentication failed. Check your API key configuration.';
+        }
+        if (statusCode === 404) {
+          return 'Resource not found. The decision may have been deleted.';
+        }
+        if (statusCode >= 500) {
+          return 'Server error. Please try again later.';
+        }
+        return error.message || 'An unexpected error occurred.';
+      }
+    };
+
+    // ====================
+    // DOM Utilities
+    // ====================
     function escapeHtml(str) {
       if (str === null || str === undefined) return '';
       return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
@@ -762,7 +1322,9 @@
         Object.entries(attrs).forEach(([k, v]) => {
           if (k === 'className') el.className = v;
           else if (k === 'textContent') el.textContent = v;
-          else if (k.startsWith('data')) el.setAttribute(k.replace(/([A-Z])/g, '-$1').toLowerCase(), v);
+          else if (k.startsWith('aria') || k.startsWith('data') || k === 'role' || k === 'tabindex') {
+            el.setAttribute(k.replace(/([A-Z])/g, '-$1').toLowerCase(), v);
+          }
           else el.setAttribute(k, v);
         });
       }
@@ -775,6 +1337,120 @@
       return el;
     }
 
+    function announceToScreenReader(message) {
+      const liveRegion = document.getElementById('live-region');
+      liveRegion.textContent = message;
+      setTimeout(() => { liveRegion.textContent = ''; }, 1000);
+    }
+
+    // ====================
+    // Toast Notifications
+    // ====================
+    const Toast = {
+      show(message, type = 'info', duration = 4000) {
+        const container = document.getElementById('toast-container');
+        const toast = createEl('div', { className: 'toast toast-' + type, role: 'alert' });
+
+        const iconSpan = createEl('span', { ariaHidden: 'true' });
+        iconSpan.textContent = type === 'error' ? '⚠' : type === 'success' ? '✓' : 'ℹ';
+        toast.appendChild(iconSpan);
+
+        const msgSpan = createEl('span', { textContent: message });
+        toast.appendChild(msgSpan);
+
+        container.appendChild(toast);
+
+        setTimeout(() => {
+          toast.classList.add('toast-exit');
+          setTimeout(() => toast.remove(), 200);
+        }, duration);
+      },
+
+      error(message) { this.show(message, 'error', 6000); },
+      success(message) { this.show(message, 'success', 3000); }
+    };
+
+    // ====================
+    // Mobile Sidebar
+    // ====================
+    const Sidebar = {
+      isOpen: false,
+
+      init() {
+        const menuBtn = document.getElementById('menu-btn');
+        const overlay = document.getElementById('sidebar-overlay');
+        const closeBtn = document.getElementById('sidebar-close');
+
+        menuBtn.addEventListener('click', () => this.toggle());
+        overlay.addEventListener('click', () => this.close());
+        closeBtn.addEventListener('click', () => this.close());
+
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && this.isOpen) {
+            this.close();
+          }
+        });
+      },
+
+      toggle() {
+        this.isOpen ? this.close() : this.open();
+      },
+
+      open() {
+        this.isOpen = true;
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const menuBtn = document.getElementById('menu-btn');
+
+        sidebar.classList.add('sidebar-open');
+        overlay.classList.add('active');
+        menuBtn.classList.add('active');
+        menuBtn.setAttribute('aria-expanded', 'true');
+
+        const firstItem = sidebar.querySelector('.decision-item');
+        if (firstItem) firstItem.focus();
+      },
+
+      close() {
+        this.isOpen = false;
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const menuBtn = document.getElementById('menu-btn');
+
+        sidebar.classList.remove('sidebar-open');
+        overlay.classList.remove('active');
+        menuBtn.classList.remove('active');
+        menuBtn.setAttribute('aria-expanded', 'false');
+        menuBtn.focus();
+      }
+    };
+
+    // ====================
+    // Modal
+    // ====================
+    const Modal = {
+      previousFocus: null,
+
+      open() {
+        this.previousFocus = document.activeElement;
+        const modal = document.getElementById('modal');
+        modal.classList.add('active');
+        document.getElementById('json-input').focus();
+        document.body.style.overflow = 'hidden';
+      },
+
+      close() {
+        const modal = document.getElementById('modal');
+        modal.classList.remove('active');
+        document.getElementById('json-input').value = '';
+        document.body.style.overflow = '';
+        if (this.previousFocus) this.previousFocus.focus();
+      }
+    };
+
+    // ====================
+    // Sample Data
+    // ====================
     const sampleRecord = {
       decision_id: "3f35d5ee-adc5-4759-8376-290692970bf4",
       run_id: "run_SUP-4312_20251227",
@@ -805,39 +1481,86 @@
       ]
     };
 
-    let currentRecord = null;
-    let decisionsCache = [];
-    let selectedIndex = -1;
-
-    function getApiUrl() { return document.getElementById('api-url').value.replace(/\/$/, ''); }
-
+    // ====================
+    // Formatting
+    // ====================
     function formatTime(ts) {
       if (!ts) return '—';
-      try { return new Date(ts).toLocaleString(); } catch { return ts; }
+      try {
+        const date = new Date(ts);
+        return new Intl.DateTimeFormat('en-US', {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        }).format(date);
+      } catch {
+        return ts;
+      }
     }
 
-    function openModal() { document.getElementById('modal').classList.add('active'); }
-    function closeModal() { document.getElementById('modal').classList.remove('active'); }
-
+    // ====================
+    // API Functions
+    // ====================
     async function fetchDecisions() {
       const listEl = document.getElementById('decision-list');
+      const fetchBtn = document.getElementById('btn-fetch');
+
       listEl.textContent = '';
-      listEl.appendChild(createEl('div', { className: 'loading', textContent: 'Loading...' }));
+      const loadingDiv = createEl('div', { className: 'loading' });
+      loadingDiv.appendChild(createEl('div', { className: 'spinner' }));
+      loadingDiv.appendChild(createEl('span', { textContent: 'Loading decisions...' }));
+      listEl.appendChild(loadingDiv);
+
+      fetchBtn.disabled = true;
+      fetchBtn.classList.add('btn-loading');
+      fetchBtn.textContent = '';
+      fetchBtn.appendChild(createEl('span', { className: 'spinner' }));
+      fetchBtn.appendChild(document.createTextNode(' Loading'));
+
+      announceToScreenReader('Loading decisions from server');
 
       try {
-        const res = await fetch(getApiUrl() + '/v1/decisions');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const res = await API.fetchWithRetry(API.getBaseUrl() + '/v1/decisions');
+
+        if (!res.ok) {
+          throw { statusCode: res.status, message: 'HTTP ' + res.status };
+        }
+
         const data = await res.json();
-        decisionsCache = data.decisions || data || [];
-        renderDecisionList(decisionsCache);
+        const decisions = data.decisions || data || [];
+        State.setDecisions(decisions);
+        renderDecisionList(decisions);
+
+        if (decisions.length > 0) {
+          Toast.success('Loaded ' + decisions.length + ' decision' + (decisions.length === 1 ? '' : 's'));
+          announceToScreenReader('Loaded ' + decisions.length + ' decisions');
+        } else {
+          announceToScreenReader('No decisions found');
+        }
       } catch (e) {
+        const errorMsg = API.formatError(e, e.statusCode);
         listEl.textContent = '';
-        listEl.appendChild(createEl('div', { className: 'error-message', textContent: 'Failed: ' + e.message }));
+
+        const errorDiv = createEl('div', { className: 'error-message' });
+        errorDiv.appendChild(createEl('div', { textContent: errorMsg }));
+
+        const actionsDiv = createEl('div', { className: 'error-message-actions' });
+        const retryBtn = createEl('button', { className: 'btn', textContent: 'Retry' });
+        retryBtn.addEventListener('click', fetchDecisions);
+        actionsDiv.appendChild(retryBtn);
+        errorDiv.appendChild(actionsDiv);
+
+        listEl.appendChild(errorDiv);
+        Toast.error(errorMsg);
+        announceToScreenReader('Error loading decisions: ' + errorMsg);
+      } finally {
+        fetchBtn.disabled = false;
+        fetchBtn.classList.remove('btn-loading');
+        fetchBtn.textContent = 'Fetch';
       }
     }
 
     function renderDecisionList(decisions) {
-      decisionsCache = decisions;
+      State.setDecisions(decisions);
       document.getElementById('decision-count').textContent = decisions.length;
       const listEl = document.getElementById('decision-list');
       listEl.textContent = '';
@@ -848,75 +1571,171 @@
       }
 
       decisions.forEach((d, i) => {
-        const item = createEl('div', { className: 'decision-item' + (i === selectedIndex ? ' active' : '') });
+        const isActive = i === State.selectedIndex;
+        const item = createEl('div', {
+          className: 'decision-item' + (isActive ? ' active' : ''),
+          role: 'option',
+          tabindex: '0',
+          ariaSelected: isActive ? 'true' : 'false'
+        });
         item.dataset.index = i;
 
         const header = createEl('div', { className: 'decision-item-header' });
-        header.appendChild(createEl('span', { className: 'decision-item-id', textContent: (d.decision_id || '').slice(0, 12) + '...' }));
+        const idText = (d.decision_id || '').slice(0, 12);
+        header.appendChild(createEl('span', { className: 'decision-item-id', textContent: idText + '...' }));
         header.appendChild(createEl('span', { className: 'decision-item-outcome outcome-' + d.outcome, textContent: d.outcome || '?' }));
         item.appendChild(header);
 
         item.appendChild(createEl('div', { className: 'decision-item-time', textContent: formatTime(d.timestamp) }));
+
         item.addEventListener('click', () => selectDecision(i));
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectDecision(i);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const next = listEl.children[i + 1];
+            if (next) next.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prev = listEl.children[i - 1];
+            if (prev) prev.focus();
+          }
+        });
+
         listEl.appendChild(item);
       });
     }
 
     async function selectDecision(index) {
-      selectedIndex = index;
-      const decision = decisionsCache[index];
+      if (State.detailAbortController) {
+        State.detailAbortController.abort();
+      }
+      State.detailAbortController = new AbortController();
+
+      State.selectIndex(index);
+      const decision = State.decisionsCache[index];
       if (!decision) return;
 
       document.querySelectorAll('.decision-item').forEach((el, i) => {
-        el.classList.toggle('active', i === index);
+        const isActive = i === index;
+        el.classList.toggle('active', isActive);
+        el.setAttribute('aria-selected', isActive ? 'true' : 'false');
       });
 
+      Sidebar.close();
+
       if (decision.decision_id && !decision.evidence) {
+        const flowContainer = document.getElementById('flow-container');
+
+        document.getElementById('welcome').style.display = 'none';
+        document.getElementById('detail-view').style.display = 'block';
+
+        let loadingEl = flowContainer.querySelector('.detail-loading');
+        if (!loadingEl) {
+          loadingEl = createEl('div', { className: 'detail-loading' });
+          loadingEl.appendChild(createEl('div', { className: 'detail-loading-spinner' }));
+          flowContainer.appendChild(loadingEl);
+        }
+        loadingEl.style.display = 'flex';
+
+        announceToScreenReader('Loading decision details');
+
         try {
-          const res = await fetch(getApiUrl() + '/v1/decisions/' + decision.decision_id);
-          if (res.ok) {
-            const full = await res.json();
-            renderRecord({
-              decision_id: full.decision_id,
-              run_id: full.run_id,
-              timestamp: full.timestamp,
-              outcome: full.outcome,
-              outcome_reason: full.outcome_reason,
-              actor: full.actor_id ? { type: full.actor_type, id: full.actor_id } : null,
-              evidence: full.evidence || [],
-              policies: full.policies || [],
-              approvals: full.approvals || [],
-              actions: full.actions || [],
-            });
-            return;
+          const res = await API.fetchWithTimeout(
+            API.getBaseUrl() + '/v1/decisions/' + decision.decision_id,
+            { signal: State.detailAbortController.signal }
+          );
+
+          if (!res.ok) {
+            throw { statusCode: res.status, message: 'HTTP ' + res.status };
           }
-        } catch (e) { console.log('Fetch failed:', e); }
+
+          const full = await res.json();
+
+          if (loadingEl) loadingEl.style.display = 'none';
+
+          const record = {
+            decision_id: full.decision_id,
+            run_id: full.run_id,
+            timestamp: full.timestamp,
+            outcome: full.outcome,
+            outcome_reason: full.outcome_reason,
+            actor: full.actor_id ? { type: full.actor_type, id: full.actor_id } : null,
+            evidence: full.evidence || [],
+            policies: full.policies || [],
+            approvals: full.approvals || [],
+            actions: full.actions || [],
+          };
+
+          renderRecord(record);
+          announceToScreenReader('Decision details loaded');
+          return;
+        } catch (e) {
+          if (e.name === 'AbortError') return;
+
+          if (loadingEl) loadingEl.style.display = 'none';
+
+          const errorMsg = API.formatError(e, e.statusCode);
+          Toast.error(errorMsg);
+
+          renderRecord(decision);
+        }
+      } else {
+        renderRecord(decision);
       }
-      renderRecord(decision);
     }
 
     function loadFromInput() {
+      const input = document.getElementById('json-input').value.trim();
+      if (!input) {
+        Toast.error('Please paste a DecisionRecord JSON');
+        return;
+      }
+
       try {
-        const data = JSON.parse(document.getElementById('json-input').value);
+        const data = JSON.parse(input);
         const record = data.record || data;
+
+        if (!record.decision_id && !record.outcome) {
+          throw new Error('Invalid DecisionRecord format');
+        }
+
         renderDecisionList([record]);
         selectDecision(0);
-        closeModal();
-      } catch(e) { alert('Invalid JSON: ' + e.message); }
+        Modal.close();
+        Toast.success('Decision loaded successfully');
+      } catch(e) {
+        Toast.error('Invalid JSON: ' + e.message);
+      }
     }
 
     function loadSample() {
       renderDecisionList([sampleRecord]);
       selectDecision(0);
+      Toast.success('Demo data loaded');
+      announceToScreenReader('Demo decision loaded');
+    }
+
+    function goHome() {
+      State.reset();
+      document.getElementById('welcome').style.display = '';
+      document.getElementById('detail-view').style.display = 'none';
+      document.getElementById('decision-list').textContent = '';
+      document.getElementById('decision-count').textContent = '0';
+      document.getElementById('detail-panel').textContent = '';
+      announceToScreenReader('Returned to home');
     }
 
     function renderRecord(record) {
-      currentRecord = record;
+      State.setRecord(record);
       document.getElementById('welcome').style.display = 'none';
       document.getElementById('detail-view').style.display = 'block';
       document.getElementById('detail-panel').textContent = '';
 
-      document.getElementById('meta-id').textContent = (record.decision_id || '').slice(0, 20) + '...';
+      const idDisplay = record.decision_id || '—';
+      document.getElementById('meta-id').textContent = idDisplay.length > 24 ? idDisplay.slice(0, 24) + '...' : idDisplay;
       document.getElementById('meta-time').textContent = formatTime(record.timestamp);
       document.getElementById('meta-agent').textContent = record.actor?.name || record.actor?.id || '—';
 
@@ -933,16 +1752,18 @@
       el.textContent = '';
 
       const steps = [
-        { n: (record.evidence || []).length, t: 'Evidence', icon: '📊' },
-        { n: (record.policies || []).length, t: 'Policy', icon: '📋' },
-        { n: (record.approvals || []).length, t: 'Approval', icon: '👤' },
-        { n: (record.actions || []).length, t: 'Action', icon: '⚡' }
+        { n: (record.evidence || []).length, t: 'Evidence', type: 'evidence' },
+        { n: (record.policies || []).length, t: 'Policy', type: 'policy' },
+        { n: (record.approvals || []).length, t: 'Approval', type: 'approval' },
+        { n: (record.actions || []).length, t: 'Action', type: 'action' }
       ].filter(s => s.n > 0);
 
       steps.forEach((s, i) => {
-        if (i > 0) el.appendChild(createEl('span', { className: 'flow-arrow', textContent: '→' }));
+        if (i > 0) el.appendChild(createEl('span', { className: 'flow-arrow', ariaHidden: 'true', textContent: '→' }));
         const step = createEl('div', { className: 'flow-step' });
-        step.appendChild(createEl('span', { textContent: s.icon }));
+        const iconSpan = createEl('span', { className: 'flow-step-icon', ariaHidden: 'true' });
+        iconSpan.appendChild(createSvgIcon(s.type));
+        step.appendChild(iconSpan);
         step.appendChild(createEl('span', { className: 'flow-step-count', textContent: s.n }));
         step.appendChild(createEl('span', { textContent: s.t }));
         el.appendChild(step);
@@ -954,34 +1775,54 @@
       gridEl.textContent = '';
 
       const columns = [
-        { id: 'evidence', label: 'Evidence', icon: '📊', items: record.evidence || [] },
-        { id: 'policy', label: 'Policy', icon: '📋', items: record.policies || [] },
-        { id: 'approval', label: 'Approval', icon: '👤', items: record.approvals || [] },
-        { id: 'action', label: 'Action', icon: '⚡', items: record.actions || [] }
+        { id: 'evidence', label: 'Evidence', items: record.evidence || [] },
+        { id: 'policy', label: 'Policy', items: record.policies || [] },
+        { id: 'approval', label: 'Approval', items: record.approvals || [] },
+        { id: 'action', label: 'Action', items: record.actions || [] }
       ];
 
       columns.forEach(col => {
-        const colEl = createEl('div', { className: 'flow-column' });
+        const colEl = createEl('div', { className: 'flow-column', role: 'gridcell' });
 
         const headerEl = createEl('div', { className: 'flow-column-header' });
-        headerEl.appendChild(createEl('div', { className: 'flow-column-icon ' + col.id, textContent: col.icon }));
+        const iconDiv = createEl('div', { className: 'flow-column-icon ' + col.id, ariaHidden: 'true' });
+        iconDiv.appendChild(createSvgIcon(col.id));
+        headerEl.appendChild(iconDiv);
         headerEl.appendChild(createEl('span', { className: 'flow-column-title', textContent: col.label }));
         colEl.appendChild(headerEl);
 
         if (col.items.length) {
           col.items.forEach((item, i) => {
-            const node = createEl('div', { className: 'flow-node' });
+            const node = createEl('div', {
+              className: 'flow-node',
+              tabindex: '0',
+              role: 'button',
+              ariaLabel: getTitle(item, col.id) + ', click for details'
+            });
             node.dataset.type = col.id;
             node.dataset.index = i;
 
             const status = getStatus(item, col.id);
             if (status) {
-              node.appendChild(createEl('div', { className: 'flow-node-status ' + status }));
+              const statusLabel = status === 'pass' ? 'passed' : status === 'fail' ? 'failed' : 'warning';
+              node.appendChild(createEl('div', {
+                className: 'flow-node-status ' + status,
+                ariaLabel: statusLabel,
+                role: 'img'
+              }));
             }
 
             node.appendChild(createEl('div', { className: 'flow-node-title', textContent: getTitle(item, col.id) }));
             node.appendChild(createEl('div', { className: 'flow-node-subtitle', textContent: getSubtitle(item, col.id) }));
+
             node.addEventListener('click', () => showDetails(col.id, i));
+            node.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                showDetails(col.id, i);
+              }
+            });
+
             colEl.appendChild(node);
           });
         } else {
@@ -1016,14 +1857,14 @@
     }
 
     function showDetails(type, index) {
-      const items = { evidence: currentRecord.evidence, policy: currentRecord.policies, approval: currentRecord.approvals, action: currentRecord.actions };
+      const items = { evidence: State.currentRecord.evidence, policy: State.currentRecord.policies, approval: State.currentRecord.approvals, action: State.currentRecord.actions };
       const item = items[type]?.[index];
       if (!item) return;
 
       document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active'));
-      document.querySelector('.flow-node[data-type="' + type + '"][data-index="' + index + '"]')?.classList.add('active');
+      const activeNode = document.querySelector('.flow-node[data-type="' + type + '"][data-index="' + index + '"]');
+      if (activeNode) activeNode.classList.add('active');
 
-      const icons = { evidence: '📊', policy: '📋', approval: '👤', action: '⚡' };
       const panelEl = document.getElementById('detail-panel');
       panelEl.textContent = '';
 
@@ -1031,10 +1872,17 @@
 
       const header = createEl('div', { className: 'detail-panel-header' });
       const title = createEl('span', { className: 'detail-panel-title' });
-      title.appendChild(createEl('span', { textContent: icons[type] }));
+      const titleIconSpan = createEl('span', { ariaHidden: 'true' });
+      titleIconSpan.appendChild(createSvgIcon(type));
+      title.appendChild(titleIconSpan);
       title.appendChild(createEl('span', { textContent: ' ' + getTitle(item, type) }));
       header.appendChild(title);
-      const closeBtn = createEl('button', { className: 'detail-panel-close', textContent: '×' });
+
+      const closeBtn = createEl('button', {
+        className: 'detail-panel-close',
+        ariaLabel: 'Close details panel'
+      });
+      closeBtn.textContent = '×';
       closeBtn.addEventListener('click', closeDetails);
       header.appendChild(closeBtn);
       panel.appendChild(header);
@@ -1070,6 +1918,9 @@
       body.appendChild(createEl('div', { className: 'json-viewer', textContent: JSON.stringify(json, null, 2) }));
       panel.appendChild(body);
       panelEl.appendChild(panel);
+
+      closeBtn.focus();
+      announceToScreenReader('Details panel opened for ' + getTitle(item, type));
     }
 
     function createDetailCard(label, value, valueClass) {
@@ -1082,19 +1933,51 @@
 
     function closeDetails() {
       document.getElementById('detail-panel').textContent = '';
+      const activeNode = document.querySelector('.flow-node.active');
       document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active'));
+      if (activeNode) activeNode.focus();
     }
 
-    // Event listeners
-    document.getElementById('btn-fetch').addEventListener('click', fetchDecisions);
-    document.getElementById('btn-paste').addEventListener('click', openModal);
-    document.getElementById('btn-demo').addEventListener('click', loadSample);
-    document.getElementById('btn-welcome-fetch').addEventListener('click', fetchDecisions);
-    document.getElementById('btn-welcome-demo').addEventListener('click', loadSample);
-    document.getElementById('modal-close').addEventListener('click', closeModal);
-    document.getElementById('modal-cancel').addEventListener('click', closeModal);
-    document.getElementById('modal-load').addEventListener('click', loadFromInput);
-    document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+    // ====================
+    // Event Listeners
+    // ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize welcome icon
+      const welcomeIcon = document.getElementById('welcome-icon');
+      welcomeIcon.appendChild(createSvgIcon('search'));
+
+      Sidebar.init();
+
+      document.getElementById('logo-btn').addEventListener('click', goHome);
+      document.getElementById('btn-fetch').addEventListener('click', fetchDecisions);
+      document.getElementById('btn-paste').addEventListener('click', () => Modal.open());
+      document.getElementById('btn-demo').addEventListener('click', loadSample);
+      document.getElementById('btn-welcome-fetch').addEventListener('click', fetchDecisions);
+      document.getElementById('btn-welcome-demo').addEventListener('click', loadSample);
+
+      document.getElementById('modal-close').addEventListener('click', () => Modal.close());
+      document.getElementById('modal-cancel').addEventListener('click', () => Modal.close());
+      document.getElementById('modal-load').addEventListener('click', loadFromInput);
+      document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') Modal.close(); });
+
+      document.getElementById('api-url').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          fetchDecisions();
+        }
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const modal = document.getElementById('modal');
+          if (modal.classList.contains('active')) {
+            Modal.close();
+          } else {
+            closeDetails();
+          }
+        }
+      });
+    });
   </script>
 </body>
 </html>
